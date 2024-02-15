@@ -175,7 +175,7 @@ elseif PingNumber > 1000 then
 mmbok.Esitlock.PredictionValue = PingNumber / 
 1000 + 0.1
 else
-                    mmbok.Esitlock.PredictionValue = PingNumber / 1000 + 0.0045
+                    mmbok.Esitlock.PredictionValue = PingNumber / 1000 + 0.0046
                 end
             end
         end)
