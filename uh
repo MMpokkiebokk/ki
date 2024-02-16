@@ -6,7 +6,10 @@ Part = "UpperTorso",
 AirshotFunccc = true,
  PartMode = true,
  Edi = true,
- Edvin = true
+ Edvin = true,
+KEY = "c",
+SHIT = 1,
+PART = "UpperTorso"
  }
 }
 local ScreenGui = Instance.new("ScreenGui")
@@ -26,10 +29,7 @@ TextLabel.TextScaled = true
 TextLabel.TextSize = 14.000
 TextLabel.TextWrapped = true
  
-_G.KEY = "c"
-_G.PART = "UpperTorso"
-_G.SHIT = 1
- 
+
 local CC = game:GetService"Workspace".CurrentCamera
 local Plr
 local mouse = game.Players.LocalPlayer:GetMouse()
@@ -57,11 +57,11 @@ function noob(player)
     repeat
         wait()
     until player.Character
-    local handler = makemarker(guimain, player.Character:WaitForChild(_G.PART), Color3.fromRGB(255, 215, 0), 0.3, 3)
+    local handler = makemarker(guimain, player.Character:WaitForChild(remake.lock.PART), Color3.fromRGB(255, 215, 0), 0.3, 3)
     handler.Name = player.Name
     player.CharacterAdded:connect(
         function(Char)
-            handler.Adornee = Char:WaitForChild(_G.PART)
+            handler.Adornee = Char:WaitForChild(remake.lock.PART)
         end
     )
  
@@ -100,14 +100,14 @@ spawn(
         placemarker.Anchored = true
         placemarker.CanCollide = false
         placemarker.Size = Vector3.new(8, 8, 8)
-        placemarker.Transparency = _G.SHIT
+        placemarker.Transparency = remake.lock.SHIT
         makemarker(placemarker, placemarker, Color3.fromRGB(255, 215, 0), 0.3, 3)
     end
 )   
  
 mouse.KeyDown:Connect(
     function(k)
-        if k ~= _G.KEY then
+        if k ~= remake.lock.KEY then
             return
         end
         if enabled then
@@ -202,7 +202,7 @@ if remake.lock.Edi == true then
 if Plr.Character.Humanoid.Fall == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
 game:GetService"RunService".Stepped:connect(function()
 if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
@@ -221,7 +221,7 @@ end)
 else
 game:GetService"RunService".Stepped:connect(function()
 if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
@@ -232,7 +232,7 @@ setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
 if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
 return old(...)
