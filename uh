@@ -10,6 +10,21 @@ AirshotFunccc = true,
 KEY = "c",
 SHIT = 1,
 PART = "UpperTorso"
+},
+farmidclose = {  --change the accomidationfactor, not add to the accomidationfactor
+enabled = false
+},
+FAR
+dis = math.huge,
+far = 0.11548 -- random set
+},
+MID = {
+dis = 30,
+mid = 0.15311221541002 -- randomset
+},
+CLOSE
+dis = 15,
+close = 0.120689385 -- randomset
  }
 }
 local ScreenGui = Instance.new("ScreenGui")
@@ -121,7 +136,45 @@ mouse.KeyDown:Connect(
             TextLabel.Text = Plr.Character.Humanoid.DisplayName
         end
     end)
- 
+-----------------farmidclose---------------------
+ function remake.Check() --- check :) 
+      if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
+          return false
+      end
+    end
+                              
+                              game:GetService("RunService").Heartbeat:Connect(
+                                  function()
+    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+    local plit = string.split(pingvalue,'(')
+        local ping = tonumber(split[1]) 
+                                      if
+                                          mmbok.farmidclose.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
+                                            if
+                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
+                                                remake.FAR.dis
+                                         then
+elseif ping < 100 then --- do it away change if below 100 ping
+                                           remake.lock.accomidationfactor = mmbok.FAR.far
+                                         
+                                            
+                                        elseif ping < 100 then
+(game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                mmbok.MID.dis
+                                         then
+elseif ping < 100 then
+remake.lock.accomidationfactor = mmbok.MID.mid
+elseif
+(game.Players[mmbok.Esitlock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                mmbok.CLOSE.dis
+                                         then
+                                         elseif ping < 100 then
+                                            remake.lock.accomidationfactor = remake.CLOSE.close
+                                        end
+                                    end
+                                end
+                            )
+---------------------------------
 function getClosestPlayerToCursor()
     local closestPlayer
     local shortestDistance = math.huge
@@ -187,6 +240,7 @@ else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
 end)
+
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
