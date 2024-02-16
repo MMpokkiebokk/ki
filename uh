@@ -14,7 +14,7 @@ PART = "UpperTorso"
 farmidclose = {  --change the accomidationfactor, not add to the accomidationfactor
 enabled = false
 },
-FAR
+FAR = {
 dis = math.huge,
 far = 0.11548 -- random set
 },
@@ -22,7 +22,7 @@ MID = {
 dis = 30,
 mid = 0.15311221541002 -- randomset
 },
-CLOSE
+CLOSE ={
 dis = 15,
 close = 0.120689385 -- randomset
  }
