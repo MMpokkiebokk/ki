@@ -23,7 +23,7 @@ TextLabel.TextSize = 14.000
 TextLabel.TextWrapped = true
  
 _G.KEY = "c"
-_G.PART = "UpperTorso"
+local PART = "UpperTorso"
 _G.SHIT = 1
  
 local CC = game:GetService"Workspace".CurrentCamera
