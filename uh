@@ -23,7 +23,7 @@ TextLabel.TextSize = 14.000
 TextLabel.TextWrapped = true
  
 _G.KEY = "c"
-local PART = "UpperTorso"
+_G.PART = "UpperTorso"
 _G.SHIT = 1
  
 local CC = game:GetService"Workspace".CurrentCamera
@@ -176,20 +176,20 @@ end)
         local ping = tonumber(split[1]) 
                                     
                                             if
-                                                               (game.Players[PART].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
+                                                               (game.Players[Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
                                                 mmbok.far.dis
                                          then
                                          elseif ping < 150 then
 
                                            accomidationfactor = far
                                          
-elseif                                   (game.Players[PART].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+elseif                                   (game.Players[Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
                                                 middis
                                          then
 elseif ping < 150 then
 accomidationfactor = mid
 elseif
-(game.Players[PART].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+(game.Players[Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
                                                 closedis
                                          then
                                          elseif ping < 150 then
