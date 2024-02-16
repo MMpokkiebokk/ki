@@ -137,7 +137,7 @@ mouse.KeyDown:Connect(
         end
     end)
 -----------------farmidclose---------------------
-      if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
+      if not (remake.lock.enabled == true then
           return false
       end
     end
@@ -148,7 +148,7 @@ mouse.KeyDown:Connect(
     local plit = string.split(pingvalue,'(')
         local ping = tonumber(split[1]) 
                                       if
-                                          mmbok.farmidclose.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
+                                          mmbok.farmidclose.enabled == true and Plr.Character then
                                             if
                                             (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
                                                 remake.FAR.dis
