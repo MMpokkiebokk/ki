@@ -267,4 +267,3 @@ if remake.lock.AirshotFunccc == true then
         end)
     end
 end
-
