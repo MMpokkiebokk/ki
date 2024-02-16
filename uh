@@ -1,3 +1,32 @@
+getgenv().remake = {
+            lock = {
+            accomidationfactor = 0.127287277287,
+            enabled = false,
+Part = "UpperTorso",
+AirshotFunccc = true,
+ PartMode = true,
+ Edi = true,
+ Edvin = true,
+KEY = "c",
+SHIT = 1,
+PART = "UpperTorso"
+},
+farmidclose = {  --change the accomidationfactor, not add to the accomidationfactor
+enabled = false
+},
+FAR = {
+dis = math.huge,
+far = 0.11548 -- random set
+},
+MID = {
+dis = 30,
+mid = 0.15311221541002 -- randomset
+},
+CLOSE ={
+dis = 15,
+close = 0.120689385 -- randomset
+ }
+}
 local ScreenGui = Instance.new("ScreenGui")
 local TextLabel = Instance.new("TextLabel")
  
@@ -130,13 +159,13 @@ elseif ping < 100 then --- do it away change if below 100 ping
                                          
                                             
                                         elseif ping < 100 then
-(game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+(game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
                                                 mmbok.MID.dis
                                          then
 elseif ping < 100 then
 remake.lock.accomidationfactor = mmbok.MID.mid
 elseif
-(game.Players[mmbok.Esitlock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+(game.Players[mmbok.Esitlock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
                                                 mmbok.CLOSE.dis
                                          then
                                          elseif ping < 100 then
