@@ -1,10 +1,14 @@
-local accomidationfactor = 0.127287277287
-local fardis = 25
-local far = 0.127287277287
-local middis = 20
-local mid = 0.11458587578294
-local closedis = 10
-local close = 0.124
+getgenv().remake = {
+            lock = {
+            accomidationfactor = 0.127287277287,
+            enabled = false,
+Part = "UpperTorso",
+AirshotFunccc = true,
+ PartMode = true,
+ Edi = true,
+ Edvin = true
+ }
+}
 local ScreenGui = Instance.new("ScreenGui")
 local TextLabel = Instance.new("TextLabel")
  
@@ -28,12 +32,6 @@ _G.SHIT = 1
  
 local CC = game:GetService"Workspace".CurrentCamera
 local Plr
-local enabled = false
-local Part = "UpperTorso"
-local AirshotFunccc = true
-local PartMode = true
-local Edi = true
-local Edvin = true
 local mouse = game.Players.LocalPlayer:GetMouse()
 local placemarker = Instance.new("Part", game.Workspace)
  
@@ -142,8 +140,8 @@ return closestPlayer
 end
  
 game:GetService"RunService".Stepped:connect(function()
-if enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
@@ -154,65 +152,37 @@ local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
-if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
 return old(...)
 end)
-if getgenv.Edvin == true then
+if remake.lock.Edvin == true then
 if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
 game:GetService"RunService".Stepped:connect(function()
-if enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
 end)
- game:GetService("RunService").Heartbeat:Connect(
-                                  function()
-    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-    local plit = string.split(pingvalue,'(')
-        local ping = tonumber(split[1]) 
-                                    
-                                            if
-                                                               (game.Players[Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
-                                                mmbok.far.dis
-                                         then
-                                         elseif ping < 150 then
-
-                                           accomidationfactor = far
-                                         
-elseif                                   (game.Players[Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
-                                                middis
-                                         then
-elseif ping < 150 then
-accomidationfactor = mid
-elseif
-(game.Players[Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
-                                                closedis
-                                         then
-                                         elseif ping < 150 then
-                                            accomidationfactor = close
-                                        end
-                                    end
-                                end
-                            )
+ 
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
-if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
 return old(...)
 end)
 else
 game:GetService"RunService".Stepped:connect(function()
-if enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
@@ -222,16 +192,16 @@ local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
-if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
 return old(...)
 end)
-if getgenv.Edi == true then
+if remake.lock.Edi == true then
 if Plr.Character.Humanoid.Fall == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
 game:GetService"RunService".Stepped:connect(function()
-if enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
 placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
@@ -243,14 +213,14 @@ setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
 if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
 return old(...)
 end)
 else
 game:GetService"RunService".Stepped:connect(function()
-if enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
 placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor))
 else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
@@ -261,7 +231,7 @@ local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
-if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
 args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*accomidationfactor)
 return old(unpack(args))
 end
@@ -271,15 +241,15 @@ end
 end
 end
 end
-if getgenv().AirshotFunccc == true then
+if remake.lock.AirshotFunccc == true then
 if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
-getgenv().Part = "RightFoot"
+remake.lock.Part = "RightFoot"
 else
 Plr.Character:WaitForChild("Humanoid").StateChanged:Connect(function(old,new)
 if new == Enum.HumanoidStateType.Freefall then
-getgenv().Part = "RightFoot"
+remake.lock.Part = "RightFoot"
 else
-getgenv().Part = "LowerTorso"
+remake.lock.Part = "LowerTorso"
 end
 end)
 end
