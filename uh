@@ -137,39 +137,36 @@ mouse.KeyDown:Connect(
         end
     end)
 -----------------farmidclose---------------------
- function remake.Check() --- check :) 
-      if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
-          return false
-      end
+ function remake.Check()
+    if not (remake.farmidclose.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
+        return false
     end
-                              
-                              game:GetService("RunService").Heartbeat:Connect(
-                                  function()
-    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-    local plit = string.split(pingvalue,'(')
-        local ping = tonumber(split[1]) 
-                                      if
-                                          mmbok.farmidclose.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
-                                            if
-                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
+  end
+                            
+                            game:GetService("RunService").Heartbeat:Connect(
+                                function()
+                                    if
+                                        remake.lock.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
+                                        if
+                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -
+                                                game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                remake.CLOSE.dis
+                                         then
+                                            remake.lock.accomidationfactor = remake.CLOSE.close
+                                            
+                                        elseif
+                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -
+                                                game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                remake.MID.dis
+                                         then
+                                            remake.lock.accomidationfactor = remake.MID.Mid
+                                        elseif
+                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -
+                                                game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >
                                                 remake.FAR.dis
                                          then
-elseif ping < 100 then --- do it away change if below 100 ping
-                                           remake.lock.accomidationfactor = mmbok.FAR.far
-                                         
-                                            
-                                        elseif ping < 100 then
-(game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
-                                                mmbok.MID.dis
-                                         then
-elseif ping < 100 then
-remake.lock.accomidationfactor = mmbok.MID.mid
-elseif
-(game.Players[mmbok.Esitlock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
-                                                mmbok.CLOSE.dis
-                                         then
-                                         elseif ping < 100 then
-                                            remake.lock.accomidationfactor = remake.CLOSE.close
+                                            remake.lock.accomidationfactor = remake.FAR.far
+                               
                                         end
                                     end
                                 end
