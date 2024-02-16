@@ -1,5 +1,10 @@
-local accomidationfactor = 0.11458587578294
- 
+local accomidationfactor = 0.127287277287
+local fardis = 25
+local far = 0.127287277287
+local middis = 20
+local mid = 0.11458587578294
+local closedis = 10
+local close = 0.124
 local ScreenGui = Instance.new("ScreenGui")
 local TextLabel = Instance.new("TextLabel")
  
@@ -18,7 +23,7 @@ TextLabel.TextSize = 14.000
 TextLabel.TextWrapped = true
  
 _G.KEY = "c"
-_G.PART = "LowerTorso"
+_G.PART = "UpperTorso"
 _G.SHIT = 1
  
 local CC = game:GetService"Workspace".CurrentCamera
@@ -164,7 +169,35 @@ else
 placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
 end)
- 
+ game:GetService("RunService").Heartbeat:Connect(
+                                  function()
+    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+    local plit = string.split(pingvalue,'(')
+        local ping = tonumber(split[1]) 
+                                    
+                                            if
+                                                               (game.Players[PART].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
+                                                mmbok.far.dis
+                                         then
+                                         elseif ping < 150 then
+
+                                           accomidationfactor = far
+                                         
+elseif                                   (game.Players[PART].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                middis
+                                         then
+elseif ping < 150 then
+accomidationfactor = mid
+elseif
+(game.Players[PART].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                closedis
+                                         then
+                                         elseif ping < 150 then
+                                            accomidationfactor = close
+                                        end
+                                    end
+                                end
+                            )
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
