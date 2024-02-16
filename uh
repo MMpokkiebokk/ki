@@ -110,12 +110,12 @@ mouse.KeyDown:Connect(
         if k ~= remake.lock.KEY then
             return
         end
-        if enabled then
-            enabled = false
+        if remake.lock.enabled then
+            remake.lock.enabled = false
             TextLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
             TextLabel.Text = "------"
         else
-            enabled = true
+            remake.lock.enabled = true
             Plr = getClosestPlayerToCursor()
             TextLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
             TextLabel.Text = Plr.Character.Humanoid.DisplayName
@@ -212,7 +212,7 @@ local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
 local args = {...}
-if enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
 args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
 return old(unpack(args))
 end
