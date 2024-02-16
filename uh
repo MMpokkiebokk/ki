@@ -22,7 +22,7 @@ MID = {
 dis = 30,
 mid = 0.15311221541002 -- randomset
 },
-CLOSE ={
+CLOSE = {
 dis = 15,
 close = 0.120689385 -- randomset
  }
@@ -137,7 +137,6 @@ mouse.KeyDown:Connect(
         end
     end)
 -----------------farmidclose---------------------
- function remake.Check() --- check :) 
       if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
           return false
       end
