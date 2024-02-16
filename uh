@@ -1,39 +1,9 @@
-getgenv().remake = {
-    lock = {
-        accomidationfactor = 0.127287277287,
-        enabled = false,
-        Part = "UpperTorso",
-        AirshotFunccc = true,
-        PartMode = true,
-        Edi = true,
-        Edvin = true,
-        KEY = "c",
-        SHIT = 1,
-        PART = "UpperTorso"
-    },
-    farmidclose = {  --change the accomidationfactor, not add to the accomidationfactor
-        enabled = false
-    },
-    FAR = {
-        dis = math.huge,
-        far = 0.11548 -- random set
-    },
-    MID = {
-        dis = 30,
-        mid = 0.15311221541002 -- randomset
-    },
-    CLOSE ={
-        dis = 15,
-        close = 0.120689385 -- randomset
-    }
-}
-
 local ScreenGui = Instance.new("ScreenGui")
 local TextLabel = Instance.new("TextLabel")
-
+ 
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
+ 
 TextLabel.Parent = ScreenGui
 TextLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 TextLabel.BackgroundTransparency = 0.700
@@ -44,71 +14,73 @@ TextLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
 TextLabel.TextScaled = true
 TextLabel.TextSize = 14.000
 TextLabel.TextWrapped = true
+ 
 
-local CC = game:GetService("Workspace").CurrentCamera
+local CC = game:GetService"Workspace".CurrentCamera
 local Plr
 local mouse = game.Players.LocalPlayer:GetMouse()
 local placemarker = Instance.new("Part", game.Workspace)
-
+ 
 function makemarker(Parent, Adornee, Color, Size, Size2)
-    local e = Instance.new("BillboardGui", Parent)
-    e.Name = "GayNiggerPenis"
-    e.Adornee = Adornee
-    e.Size = UDim2.new(Size, Size2, Size, Size2)
-    e.AlwaysOnTop = true
-    local a = Instance.new("Frame", e)
-    a.Size = UDim2.new(1, 0, 1, 0)
-    a.BackgroundTransparency = 0
-    a.BackgroundColor3 = Color
-    local g = Instance.new("UICorner", a)
-    g.CornerRadius = UDim.new(50, 50)
-    return(e)
+local e = Instance.new("BillboardGui", Parent)
+e.Name = "GayNiggerPenis"
+e.Adornee = Adornee
+e.Size = UDim2.new(Size, Size2, Size, Size2)
+e.AlwaysOnTop = true
+local a = Instance.new("Frame", e)
+a.Size = UDim2.new(1, 0, 1, 0)
+a.BackgroundTransparency = 0
+a.BackgroundColor3 = Color
+local g = Instance.new("UICorner", a)
+g.CornerRadius = UDim.new(50, 50)
+return(e)
 end
-
+ 
+ 
 local data = game.Players:GetPlayers()
-
 function noob(player)
     local character
     repeat
         wait()
     until player.Character
-    local handler = makemarker(ScreenGui, player.Character:WaitForChild(remake.lock.PART), Color3.fromRGB(255, 215, 0), 0.3, 3)
+    local handler = makemarker(guimain, player.Character:WaitForChild(remake.lock.PART), Color3.fromRGB(255, 215, 0), 0.3, 3)
     handler.Name = player.Name
     player.CharacterAdded:connect(
         function(Char)
             handler.Adornee = Char:WaitForChild(remake.lock.PART)
         end
     )
-
-    spawn(
+ 
+ 
+spawn(
         function()
             while wait() do
                 if player.Character then
-                    --TextLabel.Text = player.Name.." | Bounty: "..tostring(player:WaitForChild("leaderstats").Wanted.Value).." | "..tostring(math.floor(player.Character:WaitForChild("Humanoid").Health))
+                --TextLabel.Text = player.Name.." | Bounty: "..tostring(player:WaitForChild("leaderstats").Wanted.Value).." | "..tostring(math.floor(player.Character:WaitForChild("Humanoid").Health))
                 end
             end
         end
     )
 end
-
+ 
 for i = 1, #data do
     if data[i] ~= game.Players.LocalPlayer then
         noob(data[i])
     end
 end
-
+ 
 game.Players.PlayerAdded:connect(
     function(Player)
         noob(Player)
     end
 )
-
+ 
 game.Players.PlayerRemoving:Connect(
     function(player)
-        ScreenGui[player.Name]:Destroy()
+        guimain[player.Name]:Destroy()
     end
 )
-
+ 
 spawn(
     function()
         placemarker.Anchored = true
@@ -118,7 +90,7 @@ spawn(
         makemarker(placemarker, placemarker, Color3.fromRGB(255, 215, 0), 0.3, 3)
     end
 )   
-
+ 
 mouse.KeyDown:Connect(
     function(k)
         if k ~= remake.lock.KEY then
@@ -135,135 +107,175 @@ mouse.KeyDown:Connect(
             TextLabel.Text = Plr.Character.Humanoid.DisplayName
         end
     end)
-
-function remake.Check() --- check :) 
-    if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
-        return false
+-----------------farmidclose---------------------
+ function remake.Check() --- check :) 
+      if not (remake.lock.enabled == true and Plr.Character ~= nil and remake.lock.Part ~= nil) then
+          return false
+      end
     end
-end
-
-game:GetService("RunService").Heartbeat:Connect(
-    function()
-        local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-        local split = string.split(pingvalue,'(')
+                              
+                              game:GetService("RunService").Heartbeat:Connect(
+                                  function()
+    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+    local plit = string.split(pingvalue,'(')
         local ping = tonumber(split[1]) 
-        if
-            remake.farmidclose.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
-            if
-                (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
-                remake.FAR.dis
-            then
-                remake.lock.accomidationfactor = remake.FAR.far
-            elseif
-                (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
-                remake.MID.dis
-            then
-                remake.lock.accomidationfactor = remake.MID.mid
-            elseif
-                (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
-                remake.CLOSE.dis
-            then
-                remake.lock.accomidationfactor = remake.CLOSE.close
-            end
-        end
-    end
-)
-
+                                      if
+                                          mmbok.farmidclose.enabled == true and Plr.Character ~= nil and (remake.lock.Part) and Plr.Character then
+                                            if
+                                            (game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude >=
+                                                remake.FAR.dis
+                                         then
+elseif ping < 100 then --- do it away change if below 100 ping
+                                           remake.lock.accomidationfactor = mmbok.FAR.far
+                                         
+                                            
+                                        elseif ping < 100 then
+(game.Players[remake.lock.Part].Character.HumanoidRootPart.Position -                                          game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                mmbok.MID.dis
+                                         then
+elseif ping < 100 then
+remake.lock.accomidationfactor = mmbok.MID.mid
+elseif
+(game.Players[mmbok.Esitlock.Part].Character.HumanoidRootPart.Position -                             game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <=
+                                                mmbok.CLOSE.dis
+                                         then
+                                         elseif ping < 100 then
+                                            remake.lock.accomidationfactor = remake.CLOSE.close
+                                        end
+                                    end
+                                end
+                            )
+---------------------------------
 function getClosestPlayerToCursor()
     local closestPlayer
     local shortestDistance = math.huge
-
-    for i, v in pairs(game.Players:GetPlayers()) do
-        if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
-            local pos = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
-            local magnitude = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).magnitude
-            if magnitude < shortestDistance then
-                closestPlayer = v
-                shortestDistance = magnitude
-            end
-        end
-    end
-    return closestPlayer
+ 
+for i, v in pairs(game.Players:GetPlayers()) do
+if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
+local pos = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
+local magnitude = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).magnitude
+if magnitude < shortestDistance then
+closestPlayer = v
+shortestDistance = magnitude
 end
-
-game:GetService("RunService").Stepped:connect(function()
-    if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-        placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
-    else
-        placemarker.CFrame = CFrame.new(0, 9999, 0)
-    end
+end
+end
+return closestPlayer
+end
+ 
+game:GetService"RunService".Stepped:connect(function()
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
+else
+placemarker.CFrame = CFrame.new(0, 9999, 0)
+end
+end)
+ 
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(...)
+local args = {...}
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
+return old(unpack(args))
+end
+return old(...)
+end)
+if remake.lock.Edvin == true then
+if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
+game:GetService"RunService".Stepped:connect(function()
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
+else
+placemarker.CFrame = CFrame.new(0, 9999, 0)
+end
+end)
+ 
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(...)
+local args = {...}
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
+return old(unpack(args))
+end
+return old(...)
+end)
+else
+game:GetService"RunService".Stepped:connect(function()
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
+else
+placemarker.CFrame = CFrame.new(0, 9999, 0)
+end
 end)
 
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
-    local args = {...}
-    if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-        args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
-        return old(unpack(args))
-    end
-    return old(...)
+local args = {...}
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
+return old(unpack(args))
+end
+return old(...)
 end)
-
-if remake.lock.Edvin == true then
-    if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
-        game:GetService("RunService").Stepped:connect(function()
-            if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
-            else
-                placemarker.CFrame = CFrame.new(0, 9999, 0)
-            end
-        end)
-
-        local mt = getrawmetatable(game)
-        local old = mt.__namecall
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(...)
-            local args = {...}
-            if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-                args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
-                return old(unpack(args))
-            end
-            return old(...)
-        end)
-    end
-end
-
 if remake.lock.Edi == true then
-    if Plr.Character.Humanoid.Fall == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
-        game:GetService("RunService").Stepped:connect(function()
-            if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
-            else
-                placemarker.CFrame = CFrame.new(0, 9999, 0)
-            end
-        end)
-
-        local mt = getrawmetatable(game)
-        local old = mt.__namecall
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(...)
-            local args = {...}
-            if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
-                args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
-                return old(unpack(args))
-            end
-            return old(...)
-        end)
-    end
+if Plr.Character.Humanoid.Fall == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
+game:GetService"RunService".Stepped:connect(function()
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
+else
+placemarker.CFrame = CFrame.new(0, 9999, 0)
 end
-
+end)
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(...)
+local args = {...}
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
+return old(unpack(args))
+end
+return old(...)
+end)
+else
+game:GetService"RunService".Stepped:connect(function()
+if remake.lock.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+placemarker.CFrame = CFrame.new(Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor))
+else
+placemarker.CFrame = CFrame.new(0, 9999, 0)
+end
+end)
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(...)
+local args = {...}
+if remake.lock.enabled and getnamecallmethod() == "FireServer" and args[2] == "UpdateMousePos" then
+args[3] = Plr.Character.HumanoidRootPart.Position+(Plr.Character.HumanoidRootPart.Velocity*remake.lock.accomidationfactor)
+return old(unpack(args))
+end
+return old(...)
+end)
+end
+end
+end
+end
 if remake.lock.AirshotFunccc == true then
-    if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
-        remake.lock.Part = "RightFoot"
-    else
-        Plr.Character:WaitForChild("Humanoid").StateChanged:Connect(function(old,new)
-            if new == Enum.HumanoidStateType.Freefall then
-                remake.lock.Part = "RightFoot"
-            else
-                remake.lock.Part = "LowerTorso"
-            end
-        end)
-    end
+if Plr.Character.Humanoid.Jump == true and Plr.Character.Humanoid.FloorMaterial == Enum.Material.Air then
+remake.lock.Part = "RightFoot"
+else
+Plr.Character:WaitForChild("Humanoid").StateChanged:Connect(function(old,new)
+if new == Enum.HumanoidStateType.Freefall then
+remake.lock.Part = "RightFoot"
+else
+remake.lock.Part = "LowerTorso"
+end
+end)
+end
 end
