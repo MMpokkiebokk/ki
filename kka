@@ -77,8 +77,7 @@ end
 )
 game:GetService("RunService").heartbeat:Connect(function()
 if VelEnabled == true then
-local plrvelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity --//
-defining the player velocity
+local plrvelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
 plrvelocity = Vector3.new(desync.VelocityDesync.Velocity.X,
 desync.VelocityDesync.Velocity.Y, desync.VelocityDesync.Velocity.Z) * (2^16) --// setting the player velocity
 game:GetService("RunService").RenderStepped:Wait() --// loop on player movement / render
