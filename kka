@@ -2,7 +2,7 @@ getgenv().Settings = {
 TrueDesync = {
 ["Enabled"] = (true),
 ["Keybind"] = (Enum.KeyCode.Z),
-["Delay"] = (0.145),
+["Delay"] = (0.145)
 },
 VelocityDesync = { --// of course this is much less accurate ["Enabled"] = (false),
 ["Keybind"] = (Enum.KeyCode.X),
