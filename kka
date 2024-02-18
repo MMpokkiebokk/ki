@@ -1,4 +1,3 @@
--- im too lazy to make a better toggle check so yea this is indeedly not my force coding skills 
 getgenv().Settings = {
 TrueDesync = {
 ["Enabled"] = (true),
