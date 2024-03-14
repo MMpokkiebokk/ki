@@ -1,0 +1,141 @@
+getgenv().mmbok = {
+    Esitlock = {
+           Enabled = true,
+          Key = "x",
+         notifaction = true,  
+        Prediction = true, -- dont turn off lil
+       PredictionValue = 0.1855663636364673443191931404032421
+ ,
+Part = "Head"
+},
+AutoPrediction = {
+OnlyTurnOffResolver = true,
+PREDICTIONVALUECHANGE = 0.21552732642,
+P300 = 0.15555,
+P290 = 0.15445,
+P280 = 0.15335,
+P270 = 0.15235,
+P260 = 0.15115,
+P250 = 0.15023,
+P240 = 0.149634,
+P230 = 0.148866,
+P220 = 0.14789,
+P210 = 0.146589,
+P200 = 0.145665,
+P190 = 0.14455,
+P180 = 0.14357,
+P170 = 0.14268,
+P160 = 0.14138,
+P150 = 0.14025,
+P140 = 0.13983,
+P130 = 0.13858,
+P120 = 0.13788,
+P110 = 0.13642,
+P100 = 0.13556,
+P90 = 0.134198,
+P80 = 0.13355,
+P70 = 0.13237,
+P60 = 0.13189,
+P50 = 0.13073,
+P40 = 0.12987,
+P30 = 0.12886,
+P20 = 0.12756,
+P10 = 0.12642
+},
+AutoPredictionResolver = { -- if u turn on resolver it work same with auto resolver
+OnlyTurnOnResolver = true,
+PREDICTIONVALUECHANGE = 0.23552732642,
+P300 = 0.19675,
+P290 = 0.19487,
+P280 = 0.192012,
+P270 = 0.190654,
+P260 = 0.188512,
+P250 = 0.184398,
+P240 = 0.182178,
+P230 = 0.17898,
+P220 = 0.17676,
+P210 = 0.17454,
+P200 = 0.17232,
+P190 = 0.17010,
+P180 = 0.16898,
+P170 = 0.16676,
+P160 = 0.16454,
+P150 = 0.16232,
+P140 = 0.16010,
+P130 = 0.15898,
+P120 = 0.15676,
+P110 = 0.15454,
+P100 = 0.15232,
+P90 = 0.15010,
+P80 = 0.14898,
+P70 = 0.14676,
+P60 = 0.14454,
+P50 = 0.14232,
+P40 = 0.14010,
+P30 = 0.13898,
+P20 = 0.13676,
+P10 = 0.13454
+},
+XYZ = { --https://ibb.co/9NMWQjy
+--https://streamable.com/untj0r
+Enabled = true -- it do resolver better , lock same
+},
+X = {
+Xairshotfrist = 60,
+Xairshotsecond = 40,
+Xnormal = 80
+},
+Y = {
+Yairshotfrist = 55,
+Yairshotsecond = 35,
+Ynormal = 75
+},
+Z = {
+Zairshotfrist = 50,
+Zairshotsecond = 30,
+Znormal = 70
+},
+  Airshot = {
+  Enabled = true,
+  AirFristPart = "HumanoidRooPart",
+Delaychangetofrist = 1.5,
+  AirLastPart = "HumanoidRooPart",
+Delaychangetolast = 2,
+  Delayreturnnormalpart = 2
+  },
+        RESOLVER = { --MoveDirection,DeltaTimeMoveDirection 
+--DeltaTime                                    
+        Enabled = false, -- if turn on AUTORESOLVER it = false 
+        Type = "MoveDirection" ,
+        methoodfromme = false -- i test it , it dont need enabled resolver but u want blatant turn on xyz and it same with resolver 
+},
+DelayResolver = { -- For deltatime
+DelayDeltaTime = 1,
+DelayDeltaTimeMoveDirection = 1
+},
+AUTORESOLVER = { 
+AUTORESOLVER = true,     -- [[if enabled and they veloctiy XYZ above or under ur setting (same change velocity... it auto enabled]]
+iftheyvelocityabove = 24,
+iftheyvelocityunder = -24,
+Methoodtype = "DeltaTime" 
+--MoveDirection,DeltaTimeMoveDirection,DeltaTime,(methoodfromme  it comming soon)
+},
+Misc = { -- comming soon 
+Autoreload = false
+        },
+        esptarget = {
+            Tracer = true,
+            TracerColor = Color3.new(200, 255, 238),
+            TracerTransparency = 0.75,
+            TracerThickness = 5,
+            Hitbox = true, -- only check velocity
+            Hitboxcolor = Color3.new(150, 100, 120), -- this corlor so smooth
+            HitboxTypeShape = "Ball", --Ball,Block,Cylinder
+            HitboxType = "ForceField", --neon,plastic...
+            HitboxSize = Vector3.new(0.2, 0.2, 0.2),
+            showdot = true, --only check velocity
+            dotsize = UDim2.new(0.2, 0.2, 0.2, 0.2),
+            dotRadius = UDim.new(0.5, 1)
+    }
+  }
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Ducanh91jj/ki/main/Blatant%20version%20(test)", true))()
