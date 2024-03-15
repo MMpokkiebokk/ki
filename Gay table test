@@ -4,13 +4,15 @@ getgenv().mmbok = {
           Key = "x",
          notifaction = true,  
         Prediction = true, -- dont turn off lil
-       PredictionValue = 0.1855663636364673443191931404032421
- ,
+       PredictionValue = 0.1852,
 Part = "Head"
+},
+manymethoodbypassexpdecte ={
+Enable = true
 },
 AutoPrediction = {
 OnlyTurnOffResolver = true,
-PREDICTIONVALUECHANGE = 0.21552732642,
+PREDICTIONVALUECHANGE = 0.195,
 P300 = 0.15555,
 P290 = 0.15445,
 P280 = 0.15335,
@@ -44,7 +46,7 @@ P10 = 0.12642
 },
 AutoPredictionResolver = { -- if u turn on resolver it work same with auto resolver
 OnlyTurnOnResolver = true,
-PREDICTIONVALUECHANGE = 0.23552732642,
+PREDICTIONVALUECHANGE = 0.215,
 P300 = 0.19675,
 P290 = 0.19487,
 P280 = 0.192012,
@@ -91,9 +93,9 @@ Yairshotsecond = 35,
 Ynormal = 75
 },
 Z = {
-Zairshotfrist = 50,
-Zairshotsecond = 30,
-Znormal = 70
+Zairshotfrist = -60,
+Zairshotsecond = -40,
+Znormal = -80
 },
   Airshot = {
   Enabled = true,
@@ -107,11 +109,11 @@ Delaychangetolast = 2,
 --DeltaTime                                    
         Enabled = false, -- if turn on AUTORESOLVER it = false 
         Type = "MoveDirection" ,
-        methoodfromme = false -- i test it , it dont need enabled resolver but u want blatant turn on xyz and it same with resolver 
+        methoodfromme = true -- i test it , it do resolver or not resolver blatant "it why it is (methoodfromme)"
 },
 DelayResolver = { -- For deltatime
-DelayDeltaTime = 1,
-DelayDeltaTimeMoveDirection = 1
+DelayDeltaTime = 0.5,
+DelayDeltaTimeMoveDirection = 0.5
 },
 AUTORESOLVER = { 
 AUTORESOLVER = true,     -- [[if enabled and they veloctiy XYZ above or under ur setting (same change velocity... it auto enabled]]
@@ -120,8 +122,11 @@ iftheyvelocityunder = -24,
 Methoodtype = "DeltaTime" 
 --MoveDirection,DeltaTimeMoveDirection,DeltaTime,(methoodfromme  it comming soon)
 },
-Misc = { -- comming soon 
-Autoreload = false
+Misc = { 
+fpsunlock = true, -- work
+nojumpcooldown = true, --work
+antistomp = true, -- dont work i update wait kid
+crazyautokillorfling = true -- idk on test / not velocity
         },
         esptarget = {
             Tracer = true,
