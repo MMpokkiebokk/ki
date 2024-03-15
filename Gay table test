@@ -4,7 +4,7 @@ getgenv().mmbok = {
           Key = "x",
          notifaction = true,  
         Prediction = true, -- dont turn off lil
-       PredictionValue = 0.1852,
+       PredictionValue = 0.18526362,
 Part = "Head"
 },
 manymethoodbypassexpdecte ={
