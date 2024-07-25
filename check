@@ -1,0 +1,36 @@
+local UserInputService = game:GetService("UserInputService")
+local devicecheck;
+function x(tt, tx, drtion)
+    game.StarterGui:SetCore(
+        "SendNotification",
+        {
+            Title = tt,
+            Text = tx,
+            Duration = drtion
+        }
+    )
+end
+
+local function getDeviceType()
+    
+    if  UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled then
+         devicecheck = "Mobile"
+         x("devicecheck","Mob",3)
+    elseif not UserInputService.TouchEnabled and UserInputService.KeyboardEnabled and UserInputService.MouseEnabled then
+        devicecheck = "Pc"
+        x("devicecheck","Pc",3)
+    else
+        devicecheck = "Unknown"
+        x("devicecheck","unknow",3)
+    end
+end
+
+if getDeviceType() then
+print(FUNNY_KM)
+end
+if getDeviceType() then
+    print(mobcheck)
+end
+
+
+
