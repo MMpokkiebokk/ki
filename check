@@ -20,8 +20,8 @@ local function getDeviceType()
         devicecheck = "Pc"
         x("devicecheck","Pc",3)
     else
-        devicecheck = "Unknown"
-        x("devicecheck","unknow",3)
+        devicecheck = "Mobile"
+        x("devicecheck","Mobile",3)
     end
 end
 
