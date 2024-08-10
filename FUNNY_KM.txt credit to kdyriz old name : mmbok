@@ -1,3 +1,4 @@
+
 function Winfo2(tt, tx, drtion)
         game.StarterGui:SetCore(
             "SendNotification",
@@ -11,3 +12,5 @@ function Winfo2(tt, tx, drtion)
 x"Wait For Update","Fix Lag Csync",60)
 x("Fix Visual","Fix Autoprediction",60)
 x("Fix Aim Didnt Work","Next Version 0.1.21.0",60)
+wait(5)
+x("Added Fall Autoprediction","Add a Blatant New",60)
