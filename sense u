@@ -2677,7 +2677,7 @@ function elementHandler:Slider(sliderName: string, callback, maximumValue: numbe
 		sliderConnection = mouse.Move:Connect(onMouseMoved)
 		
 		endInputConnection = UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or  input.UserInputType == Enum.UserInputType.TouchDown then
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or  input.UserInputType == Enum.UserInputType.Touch then
 				sliderConnection:Disconnect()
 				endInputConnection:Disconnect()
 			end
@@ -3261,3 +3261,4 @@ end
 createOriginialElements()
 
 return Library
+
