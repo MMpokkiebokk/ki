@@ -34,6 +34,7 @@ local mouse = local_player:GetMouse()
 
 local http = game:GetService("HttpService")
 local rs = game:GetService("RunService")
+local endInputConnection
 
 function library:set_draggable(gui)
     local UserInputService = game:GetService("UserInputService")
@@ -2017,7 +2018,9 @@ end
                                     endInputConnection = uis.InputEnded:Connect(function(input)
                                         if input.UserInputType == Enum.UserInputType.MouseButton1 or  input.UserInputType == Enum.UserInputType.Touch then
                                     move_connection:Disconnect()
+                                    SliderButton:Disconnect()
                                     release_connection:Disconnect()
+                                    endInputConnection:Disconnect()
                                      
                                     end 
                                     end)
