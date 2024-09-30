@@ -1998,7 +1998,7 @@ end
                                 end
                             end)
                             release_connection = uis.InputEnded:Connect(function(Mouse)
-                                if Mouse.UserInputType == Enum.UserInputType.MouseButton1  or not Mouse.UserInputType == Enum.UserInputType.Touch then
+                                if Mouse.UserInputType == Enum.UserInputType.MouseButton1  or  Mouse.UserInputType == Enum.UserInputType.Touch then
                                     SliderFrame.Size = UDim2.new(0, math.clamp(mouse.X - SliderFrame.AbsolutePosition.X, 0, 260), 1, 0)
                         
                                     local val = math.floor((((max - min) / 260) * SliderFrame.AbsoluteSize.X) + min)
@@ -2015,15 +2015,16 @@ end
                                         library:tween(SliderValue, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(150, 150, 150)})
                                     end
                                     
-                                    endInputConnection = uis.InputEnded:Connect(function(input)
-                                        if input.UserInputType == Enum.UserInputType.MouseButton1 or  input.UserInputType == Enum.UserInputType.Touch then
+ 
+                                        if Mouse.UserInputType == Enum.UserInputType.MouseButton1 or  Mouse.UserInputType == Enum.UserInputType.Touch then
                                     move_connection:Disconnect()
                                     SliderButton:Disconnect()
                                     release_connection:Disconnect()
                                     endInputConnection:Disconnect()
-                                     
-                                    end 
-                                    end)
+                                    Slider.MouseButton1Down:Disconnect()
+                                    Slider.MouseEnter:Disconnect()
+                                    Slider.MouseLeave:Disconnect()
+end 
 
                                 end
                             end)
