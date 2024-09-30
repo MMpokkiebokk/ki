@@ -1997,7 +1997,7 @@ end
                                 end
                             end)
                             release_connection = uis.InputEnded:Connect(function(Mouse)
-                                if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
+                                if Mouse.UserInputType == Enum.UserInputType.MouseButton1  or Mouse.UserInputType == Enum.UserInputType.Touch then
                                     SliderFrame.Size = UDim2.new(0, math.clamp(mouse.X - SliderFrame.AbsolutePosition.X, 0, 260), 1, 0)
                         
                                     local val = math.floor((((max - min) / 260) * SliderFrame.AbsoluteSize.X) + min)
@@ -2013,10 +2013,11 @@ end
                                         library:tween(SliderText, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(150, 150, 150)})
                                         library:tween(SliderValue, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(150, 150, 150)})
                                     end
-if UserInputService.InputEnded.UserInputType == Enum.UserInputType.MouseButton1 or  UserInputService.InputEnded.UserInputType == Enum.UserInputType.Touch then
+
+ 
                                     move_connection:Disconnect()
                                     release_connection:Disconnect()
-                                    end 
+                                    
                                 end
                             end)
                         end)
