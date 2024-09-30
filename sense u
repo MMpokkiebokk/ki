@@ -2652,51 +2652,43 @@ function elementHandler:Slider(sliderName: string, callback, maximumValue: numbe
 
 	callback = callback or function() end
 	local function onMouseDown(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		  -- Check if script.Parent has MouseButton1Down event (assuming script is inside slider bar)
-		  if script.Parent.MouseButton1Down then
-			local sliderBar = script.Parent
+		if input.UserInputType == Enum.UserInputType.Touch then
+		  local sliderBar = script.Parent -- Assuming the script is inside the slider bar object
 	  
-			local function onInputMove(input)
-			  if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-				local absPos = sliderBar.AbsolutePosition
-				local absSize = sliderBar.Parent.EmptySliderBackground.AbsoluteSize
+		  local function onInputMove(input)
+			if input.UserInputType == Enum.UserInputType.Touch then
+			  local touchX, touchY = input.Position.X, input.Position.Y -- Handle touch coordinates
 	  
-				local touchX, touchY = input.Position.X, input.Position.Y -- Handle touch coordinates
+			  local absPos = sliderBar.AbsolutePosition
+			  local absSize = sliderBar.Parent.EmptySliderBackground.AbsoluteSize
 	  
-				-- Calculate normalized position within the slider bar (0-1 range)
-				local normalizedX = math.clamp((touchX - absPos.X) / absSize.X, 0, 1)
+			  -- Calculate normalized position within the slider bar (0-1 range)
+			  local normalizedX = math.clamp((touchX - absPos.X) / absSize.X, 0, 1)
 	  
-				-- Update slider size and value based on normalized position
-				sliderBar.Size = UDim2.new(0, math.max(minimumClosePixelsLeft, normalizedX * absSize.X), 1, 0)
-				sliderValue = minimumValue + (maxMinRange * normalizedX)
+			  -- Update slider size and value based on normalized position
+			  sliderBar.Size = UDim2.new(0, math.max(minimumClosePixelsLeft, normalizedX * absSize.X), 1, 0)
+			  sliderValue = minimumValue + (maxMinRange * normalizedX)
 	  
-				sliderInstance.TextGrouping.NumberText.Text = math.round(sliderValue)
-				callback(sliderValue)
-			  end
+			  sliderInstance.TextGrouping.NumberText.Text = math.round(sliderValue)
+			  callback(sliderValue)
 			end
-	  
-			-- Connect mouse/touch move event listener
-			local moveConnection = input.Move:Connect(onInputMove)
-	  
-			-- Connect disconnect event listener
-			local endConnection = UserInputService.InputEnded:Connect(function(_, gameProcessedEvent)
-			  if (gameProcessedEvent and input == gameProcessedEvent.Input) or not gameProcessedEvent then
-				-- Disconnect move and end connection events only if user ended interaction on the slider
-				moveConnection:Disconnect()
-				endConnection:Disconnect()
-			  end
-			end)
-		  else
-			-- Handle error or provide a message if script.Parent doesn't have MouseButton1Down
-			print("Error: Script parent doesn't have MouseButton1Down event.")
 		  end
+	  
+		  -- Connect touch move event listener
+		  local moveConnection = input.Move:Connect(onInputMove)
+	  
+		  -- Connect touch release event listener
+		  local endConnection = UserInputService.InputEnded:Connect(function(_, gameProcessedEvent)
+			if (gameProcessedEvent and input == gameProcessedEvent.Input) or not gameProcessedEvent then
+			  -- Disconnect move and end connection events only if user ended interaction on the slider
+			  moveConnection:Disconnect()
+			  endConnection:Disconnect()
+			end
+		  end)
 		end
 	  end
 	  
-	  -- Connect initial touch/mouse down event listener (check for both events)
-	  script.Parent.MouseButton1Down:Connect(onMouseDown)
-	   
+	  -- Connect initial touch down event listener
 	  script.Parent.TouchDown:Connect(onMouseDown)
 	
 	local function onFocusLost(enterPressed)
