@@ -1968,7 +1968,7 @@ function Library.new(windowName: string, constrainToScreen: boolean?, width: num
 		updateWindowPos()
 
 		inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				mouseMovedConnection:Disconnect()
 				inputEndedConnection:Disconnect()
 			end
@@ -3168,7 +3168,7 @@ function elementHandler:ColorWheel(colorWheelName: string, callback): table
 		end)
 
 		inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if input.UserInputType == Enum.UserInputType.MouseButton1  or input.UserInputType == Enum.UserInputType.Touch then
 				inputEndedConnection:Disconnect()
 				mouseMovedConnection:Disconnect()
 			end
@@ -3185,7 +3185,7 @@ function elementHandler:ColorWheel(colorWheelName: string, callback): table
 		end)
 
 		inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if input.UserInputType == Enum.UserInputType.MouseButton1  or input.UserInputType == Enum.UserInputType.Touch then
 				inputEndedConnection:Disconnect()
 				mouseMovedConnection:Disconnect()
 			end
@@ -3261,4 +3261,3 @@ end
 createOriginialElements()
 
 return Library
-
