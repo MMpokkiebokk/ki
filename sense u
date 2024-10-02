@@ -2549,7 +2549,7 @@ function elementHandler:Button(buttonName: string, callback): table -- Add Callb
 	buttonInstance.ButtonText.Position = UDim2.fromOffset(buttonInstance.CircleBackground.AbsoluteSize.X + textOffset,0)
 end
 
-function elementHandler:Dropdown(dropdownName: string): table
+function elementHandler:Dropdown(dropdownName: string,callback): table
 	local dropdown = setmetatable({}, dropdownHandler)
 	local dropdownInstance = originalElements.Dropdown:Clone()
 	local elementHolderInnerBackground = dropdownInstance.ElementHolder.ElementHolderBackground.ElementHolderInnerBackground
@@ -2571,7 +2571,8 @@ function elementHandler:Dropdown(dropdownName: string): table
 			dropdownInstanceOpenTween:Play()
 		end
 	end
-	
+	callback = callback or function() end
+
 	dropdown.Type = "Dropdown"
 	dropdown.IdentifierText = dropdownName or "N/A"
 	dropdown.Instance = dropdownInstance
@@ -2584,7 +2585,8 @@ function elementHandler:Dropdown(dropdownName: string): table
 	end
 	
 	dropdownInstance.DropdownButton.MouseButton1Click:Connect(onDropdownClicked)
-	
+	callback(onDropdownClicked)
+
 	elementHolderInnerBackground.ElementHolderInnerBackgroundList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		if dropdown.IsExpanded then
 			if elementHolderInnerBackground.ElementHolderInnerBackgroundList.AbsoluteContentSize.Y == 0 then
@@ -2613,8 +2615,8 @@ function elementHandler:Dropdown(dropdownName: string): table
 	return dropdown
 end
 
-function dropdownHandler:ChangeText(newText: string)
-	newText = newText or "N/A"
+function dropdownHandler:ChangeText(
+	newText = newText or "N/A"newText: string)
 	self.Instance.DropdownButton.ButtonBackground.DropdownText.Text = newText
 	self.IdentifierText = newText
 end
