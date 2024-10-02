@@ -2559,7 +2559,8 @@ function elementHandler:Dropdown(dropdownName: string,callback): table
 	local imageRotationCloseTween = TweenService:Create(dropdownInstance.DropdownButton.ButtonBackground.DropdownImage, TweenInfo.new(.25, Enum.EasingStyle.Linear), {Rotation = 180})
 	local dropdownInstanceCloseTween = TweenService:Create(dropdownInstance, TweenInfo.new(.25, Enum.EasingStyle.Linear), {Size = UDim2.new(1,0,0,dropdownInstance.DropdownButton.Size.Y.Offset)})
 	local dropdownInstanceOpenTween
-	
+	callback = callback or function() end
+
 	local function onDropdownClicked()
 		if dropdown.IsExpanded then
 			dropdown.IsExpanded = false
@@ -2570,9 +2571,9 @@ function elementHandler:Dropdown(dropdownName: string,callback): table
 			imageRotationOpenTween:Play()
 			dropdownInstanceOpenTween:Play()
 		end
+		callback()
 	end
-	callback = callback or function() end
-
+	
 	dropdown.Type = "Dropdown"
 	dropdown.IdentifierText = dropdownName or "N/A"
 	dropdown.Instance = dropdownInstance
@@ -2585,8 +2586,7 @@ function elementHandler:Dropdown(dropdownName: string,callback): table
 	end
 	
 	dropdownInstance.DropdownButton.MouseButton1Click:Connect(onDropdownClicked)
-	callback(onDropdownClicked)
-
+	
 	elementHolderInnerBackground.ElementHolderInnerBackgroundList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		if dropdown.IsExpanded then
 			if elementHolderInnerBackground.ElementHolderInnerBackgroundList.AbsoluteContentSize.Y == 0 then
@@ -2615,8 +2615,8 @@ function elementHandler:Dropdown(dropdownName: string,callback): table
 	return dropdown
 end
 
-function dropdownHandler:ChangeText(
-	newText = newText or "N/A"newText: string)
+function dropdownHandler:ChangeText(newText: string)
+	newText = newText or "N/A"
 	self.Instance.DropdownButton.ButtonBackground.DropdownText.Text = newText
 	self.IdentifierText = newText
 end
