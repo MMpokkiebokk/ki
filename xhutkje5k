@@ -4,7 +4,7 @@ local function gs(service) return game:GetService(service) end
 
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
-
+local ab = {}
 local Library = {
     Ui_Bind = Enum.KeyCode.RightShift,
     Colors = {
@@ -116,9 +116,8 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
 local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local gameName = productInfo.Name
-
 local dropdownindex = 50
-function AddWindow(options)
+ab.AddWindow = function (options)
     local options = options or {}
 	options = Library:validate({
 		name = string.format('<font color="rgb(%d, %d, %d)">Funny.KM</font> | @Kdyriz', Library.Colors.Accent.R * 255, Library.Colors.Accent.G * 255, Library.Colors.Accent.B * 255),
@@ -135,7 +134,7 @@ function AddWindow(options)
         Parent = _coregui,
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
-    }, True)
+    }, true)
 
 
 
@@ -2421,6 +2420,6 @@ end)
         end)
     end
     return menu
-end
-return AddWindow()
+end 
+return ab.AddWindow()
   
