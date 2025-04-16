@@ -2422,3 +2422,5 @@ end)
     end
     return menu
 end
+return AddWindow()
+  
