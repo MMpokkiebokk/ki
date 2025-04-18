@@ -111,7 +111,7 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
-
+local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
 local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
@@ -130,12 +130,22 @@ ab.AddWindow = function (options)
         },
 	}, options or {})
     local menu = {CurrentTab = nil}
-    local SCREENGUI = Library:Create("ScreenGui", {
-        Parent = _coregui,
+    local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer -- Lấy người chơi cục bộ
+
+if LocalPlayer then
+    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui") -- Lấy thư mục PlayerGui
+
+    if PlayerGui then
+        
+     SCREENGUI = Library:Create("ScreenGui", {
+        Parent = PlayerGui,
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
-
+end 
+end
 
 
     local WATERMARK_FRAME = Library:Create("Frame", {
