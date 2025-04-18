@@ -394,8 +394,7 @@ end
             ['{day}'] = os.date("%d"),
             ['{year}'] = os.date("%Y"),
             ['{fps}'] = tostring(math.floor(1 / game:GetService("RunService").RenderStepped:Wait())),
-            ['{ping}'] = tostring(math.floor(LocalPlayer.Ping or 0)),
-            ['{time}'] = os.date("%H:%M:%S"),
+            ['{ping}'] = tostring(math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() or 0)),            ['{time}'] = os.date("%H:%M:%S"),
             ['{date}'] = os.date("%b. %d, %Y"),
             ['{usage}'] = string.format("%dm %ds", mins, secs),
         }
