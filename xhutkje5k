@@ -5,7 +5,7 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer -- Lấy người chơi cục bộ
 
-local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
+local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("PlayerGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
 local ab = {}
 local Library = {
@@ -134,18 +134,13 @@ ab.AddWindow = function (options)
 	}, options or {})
     local menu = {CurrentTab = nil}
     
-if LocalPlayer then
-    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui") -- Lấy thư mục PlayerGui
-
-    if PlayerGui then
+ 
         
      SCREENGUI = Library:Create("ScreenGui", {
-        Parent = PlayerGui,
+        Parent = _coregui,
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
-end 
-end
  
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
