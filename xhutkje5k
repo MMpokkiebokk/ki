@@ -1,4 +1,4 @@
-local Workspace = game:GetService("Workspace") 
+ local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 
 
