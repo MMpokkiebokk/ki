@@ -147,7 +147,9 @@ if LocalPlayer then
 end 
 end
 
-
+repeat
+    wait()
+until SCREENGUI ~= nil 
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
         Parent = SCREENGUI,
