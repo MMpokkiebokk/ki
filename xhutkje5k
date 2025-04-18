@@ -1,6 +1,7 @@
- local Workspace = game:GetService("Workspace") 
+local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 
+local LocalPlayer = Players.LocalPlayer -- Lấy người chơi cục bộ
 
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
@@ -111,6 +112,7 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
+ 
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
@@ -132,8 +134,7 @@ ab.AddWindow = function (options)
     local menu = {CurrentTab = nil}
     local Players = game:GetService("Players")
 
-local LocalPlayer = Players.LocalPlayer -- Lấy người chơi cục bộ
-
+ 
 if LocalPlayer then
     local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui") -- Lấy thư mục PlayerGui
 
@@ -146,10 +147,7 @@ if LocalPlayer then
     }, true)
 end 
 end
-
-repeat
-    wait()
-until SCREENGUI ~= nil 
+ 
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
         Parent = SCREENGUI,
@@ -397,7 +395,7 @@ until SCREENGUI ~= nil
             ['{day}'] = os.date("%d"),
             ['{year}'] = os.date("%Y"),
             ['{fps}'] = tostring(math.floor(1 / game:GetService("RunService").RenderStepped:Wait())),
-            ['{ping}'] = tostring(math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() or 0)),
+            ['{ping}'] = tostring(math.floor(LocalPlayer.Ping or 0)),
             ['{time}'] = os.date("%H:%M:%S"),
             ['{date}'] = os.date("%b. %d, %Y"),
             ['{usage}'] = string.format("%dm %ds", mins, secs),
