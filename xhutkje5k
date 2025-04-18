@@ -1,10 +1,12 @@
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 
-local LocalPlayer = gs("Players").LocalPlayer
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer -- Lấy người chơi cục bộ
 
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
-local mouse = LocalPlayer:GetMouse()
+local mouse = gs("Players").LocalPlayer:GetMouse()
 local ab = {}
 local Library = {
     Ui_Bind = Enum.KeyCode.RightShift,
@@ -112,7 +114,6 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
- 
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
@@ -132,9 +133,7 @@ ab.AddWindow = function (options)
         },
 	}, options or {})
     local menu = {CurrentTab = nil}
-    local Players = game:GetService("Players")
-
- 
+    
 if LocalPlayer then
     local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui") -- Lấy thư mục PlayerGui
 
