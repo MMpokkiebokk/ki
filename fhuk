@@ -1,0 +1,87 @@
+local function fireRemote(params)
+ 
+    local B = params[1]   -- bảng cài đặt B
+    local x = params[2]   -- module remotes / đối tượng chính
+    local X = params[3]   -- hàm tạo CFrame, ví dụ CFrame.new
+    local F = params[4]   -- bảng cấu hình game-specific
+    local O = params[5]   -- bảng tùy chọn (thay cho p[0])
+
+    return function(player, mousePosition, weapon)
+        -- Kiểm tra điều kiện trigger auto-shoot
+        local profileKey = O[2][O[1]]
+        local settingKey  = B[2][B[1]]
+        local anxietyData = getgenv().Anxiety[profileKey]
+
+        if player 
+        and anxietyData["Auto Shoot"] == false 
+        and anxietyData[settingKey] then
+
+            local placeId = game.PlaceId
+
+            if placeId == 108661440298078 
+            or     placeId == 79611122040680 
+            or     placeId == 96878227134719 
+            or     placeId == 110259819907867 
+            or     placeId == 85346079084916 
+            or     placeId == 74594510099272 then
+
+                x.MainRemotes.MainRemoteEvent:FireServer("DEAHOODMOUSEPOSx3^3", mousePosition)
+
+            elseif placeId == 70733219445736 then
+
+                x.MainRemotes.MainRemoteEvent:FireServer("DERHOODMOUSEPOS666^", mousePosition)
+
+            elseif placeId == 114911158915197 then
+
+                x.Replication.Communication["Remote Events"]
+                  .MainEvent:FireServer("UpdateMousePos", mousePosition, mousePosition)
+
+            elseif placeId == 2788229376 then
+
+                x.MainEvent:FireServer(
+                  "ShootGun",
+                  weapon.Handle,
+                  weapon.Handle.Position,
+                  player.Character.Head.Position,
+                  player.Character.Head,
+                  X(0, 0, 0)
+                )
+
+            elseif placeId == 9825515356 then
+
+                x.MainEvent:FireServer("Shoot", {
+                    {
+                        {
+                            Instance = player.Character.Head,
+                            Normal   = weapon.Handle.Position,
+                            Position = player.Character.Head.Position
+                        }
+                    },
+                    {
+                        {
+                            thePart   = player.Character.Head,
+                            theOffset = CFrame.new(0, 0, 0)
+                        }
+                    },
+                    weapon.Handle.Position,
+                    player.Character.Head.Position,
+                    0
+                })
+
+            else
+                -- Fallback cho các game khác
+                local gameCfg   = F.games[placeId] or {}
+                local remoteKey = gameCfg.Remote or "MainEvent"
+                local argKey    = gameCfg.Arg    or "UpdateMousePos"
+                local remoteObj = x:FindFirstChild(remoteKey)
+                if remoteObj then
+                    remoteObj:FireServer(argKey, mousePosition)
+                else
+                    warn("  remote `" .. remoteKey .. "`   PlaceId:", placeId)
+                end
+            end
+        end
+    end
+end
+
+return fireRemote
