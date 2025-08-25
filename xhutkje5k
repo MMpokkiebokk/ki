@@ -12,7 +12,7 @@ local Themes = {
     Default = {
         Window = Color3.fromRGB(9, 9, 9),
         BorderColor = Color3.fromRGB(40, 40, 40),
-        Accent = Color3.fromRGB(139, 158, 252), -- Normal 116, 97, 202
+        Accent = Color3.fromRGB(139, 158, 252),
         TopBar = Color3.fromRGB(9, 9, 9),
         TopText = Color3.fromRGB(100,100,100),
         TabContainer = Color3.fromRGB(9, 9, 9),
@@ -82,10 +82,12 @@ local Library = {
         AutoScale = true,
         SaveConfig = true,
         ConfigName = "FunnyKM_Config.json",
-        ShowCustomCursor = true
+        ShowCustomCursor = true,
+        AntiScreenRecording = false -- New setting for anti-screen recording
     },
     ScreenSize = workspace.CurrentCamera.ViewportSize,
-    Cursors = {} -- For multiple touch points on mobile
+    Cursors = {}, -- For multiple touch points on mobile
+    GuiVisible = true -- Track GUI visibility
 }
 
 -- Load/Save Config System
@@ -229,7 +231,7 @@ function Library:tween(object, goal, callback)
     
     local tween
     pcall(function()
-        tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
+        tween = _tweenservice:Create(object, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
         if callback then
             tween.Completed:Connect(callback)
         end
@@ -600,12 +602,15 @@ ab.AddWindow = function (options)
     
     local menu = {CurrentTab = nil}
     
+    -- Create main ScreenGui with anti-screen recording option
     SCREENGUI = Library:Create("ScreenGui", {
         Parent = _coregui,
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name,
         IgnoreGuiInset = true,
-        ResetOnSpawn = false
+        ResetOnSpawn = false,
+        -- Anti-screen recording properties
+        GuiVisibleForCapture = not Library.Settings.AntiScreenRecording
     }, true)
     
     -- AutoScale for main window
@@ -623,7 +628,7 @@ ab.AddWindow = function (options)
         BackgroundColor3 = Library.Colors.Window,
         Visible = Library.Settings.WatermarkEnabled,
     })
-
+    
     local WATERMARK_TEXT = Library:Create("TextButton", {
         Name = "WatermarkText",
         Parent = WATERMARK_FRAME,
@@ -662,7 +667,7 @@ ab.AddWindow = function (options)
         Name = "Window",
         ZIndex = -2,
     })
-
+    
     local originalBorderColor = Library.Colors.BorderColor
     local originalTextColor = Color3.fromRGB(255, 255, 255)
     local isHovering = false
@@ -677,9 +682,11 @@ ab.AddWindow = function (options)
         Library:tween(WATERMARK_TEXT, {BorderColor3 = Library.Colors.Accent, TextColor3 = Library.Colors.Accent})
     end)
     
+    -- Fixed watermark toggle function
     Library:connection(WATERMARK_TEXT.MouseButton1Click, function()
-        WINDOW.Visible = not WINDOW.Visible
-        if not WINDOW.Visible and not isHovering then
+        Library.GuiVisible = not Library.GuiVisible
+        WINDOW.Visible = Library.GuiVisible
+        if not Library.GuiVisible and not isHovering then
             Library:tween(WATERMARK_TEXT, {BorderColor3 =  originalBorderColor, TextColor3 = originalTextColor})
         end
     end)
@@ -693,11 +700,13 @@ ab.AddWindow = function (options)
         Name = "Outline",
         ZIndex = -1,
     })
+    
     Library:Create("UIStroke", { -- window outline
         Parent = WINDOW_OUTLINE,
         Color = Library.Colors.BorderColor,
         LineJoinMode = Enum.LineJoinMode.Miter,
     })
+    
     Library:Create("TextButton", {
         Parent = WINDOW,
         Size = UDim2.new(0, 1, 0, 1),
@@ -716,6 +725,7 @@ ab.AddWindow = function (options)
         Position = UDim2.new(0,3,0,3),
         Name = "Topbar"
     })
+    
     Library:Create("Frame", { -- bar
         Parent = TOPBAR,
         BackgroundColor3 = Library.Colors.Accent,
@@ -724,6 +734,7 @@ ab.AddWindow = function (options)
         Position = UDim2.new(0.5,0,1,1),
         AnchorPoint = Vector2.new(0.5,1),
     })
+    
     local TOP_OVERLAY = Library:Create("Frame", {
         Parent = TOPBAR,
         BackgroundColor3 = Library.Colors.Accent,
@@ -733,6 +744,7 @@ ab.AddWindow = function (options)
         AnchorPoint = Vector2.new(0.5,1),
         ZIndex = 2
     })
+    
     Library:Create("UIGradient", { -- gradient
         Parent = TOP_OVERLAY,
         Transparency = NumberSequence.new({
@@ -742,6 +754,7 @@ ab.AddWindow = function (options)
         }),
         Rotation = 90
     })
+    
     Library:Create("TextLabel", { -- title
         Parent = TOPBAR,
         Size = UDim2.new(0, 0, 1, 0),
@@ -755,6 +768,7 @@ ab.AddWindow = function (options)
         TextXAlignment = Enum.TextXAlignment.Left,
         Name = "Title"
     })
+    
     Library:Create("TextLabel", { -- date
         Parent = TOPBAR,
         Size = UDim2.new(0, 0, 1, 0),
@@ -770,11 +784,39 @@ ab.AddWindow = function (options)
         Name = "Title"
     })
     
-    -- Theme selector in topbar - Fixed
+    -- Show GUI Button (moved to center)
+    local SHOW_GUI_BUTTON = Library:Create("TextButton", {
+        Parent = TOPBAR,
+        Size = UDim2.new(0, 40, 0, 14),
+        Position = UDim2.new(0.5, -20, 0, 2), -- Centered
+        BackgroundColor3 = Library.Colors.Section,
+        BorderSizePixel = 1,
+        BorderColor3 = Library.Colors.BorderColor,
+        Text = "Show GUI",
+        TextColor3 = Library.Colors.ElementActive,
+        TextSize = 8,
+        FontFace = Library.Font,
+        Name = "ShowGuiButton"
+    })
+    
+    Library:Create("UICorner", {
+        Parent = SHOW_GUI_BUTTON,
+        CornerRadius = UDim.new(0, 4)
+    })
+    
+    Library:AddTooltip(SHOW_GUI_BUTTON, "Toggle GUI Visibility")
+    
+    Library:connection(SHOW_GUI_BUTTON.MouseButton1Click, function()
+        Library.GuiVisible = not Library.GuiVisible
+        WINDOW.Visible = Library.GuiVisible
+        SHOW_GUI_BUTTON.Text = Library.GuiVisible and "Hide GUI" or "Show GUI"
+    end)
+    
+    -- Theme selector - Moved to left side
     local THEME_BUTTON = Library:Create("TextButton", {
         Parent = TOPBAR,
         Size = UDim2.new(0, 30, 0, 14),
-        Position = UDim2.new(1, -40, 0, 2),
+        Position = UDim2.new(0, 6, 0, 2), -- Left side
         BackgroundColor3 = Library.Colors.Section,
         BorderSizePixel = 1,
         BorderColor3 = Library.Colors.BorderColor,
@@ -855,6 +897,7 @@ ab.AddWindow = function (options)
         themeY = themeY + 22
     end
     
+    -- Fixed dropdown click-through issue
     Library:connection(THEME_BUTTON.MouseButton1Click, function()
         THEME_DROPDOWN.Visible = not THEME_DROPDOWN.Visible
         if THEME_DROPDOWN.Visible then
@@ -862,10 +905,12 @@ ab.AddWindow = function (options)
             THEME_DROPDOWN.Position = UDim2.new(0, THEME_BUTTON.AbsolutePosition.X, 0, THEME_BUTTON.AbsolutePosition.Y + THEME_BUTTON.AbsoluteSize.Y + 5)
             -- Adjust dropdown height based on content
             THEME_DROPDOWN.Size = UDim2.new(0, 100, 0, themeY + 5)
+            -- Set modal to prevent click-through
+            THEME_DROPDOWN.ZIndex = 1000
         end
     end)
     
-    -- Close theme dropdown when clicking elsewhere
+    -- Close theme dropdown when clicking elsewhere - Fixed
     Library:connection(_uis.InputBegan, function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             if THEME_DROPDOWN.Visible then
@@ -873,19 +918,28 @@ ab.AddWindow = function (options)
                 local dropdownPos = THEME_DROPDOWN.AbsolutePosition
                 local dropdownSize = THEME_DROPDOWN.AbsoluteSize
                 
-                if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
-                        mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+                -- Check if click is outside dropdown
+                local isOutside = not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+                                     mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y)
+                
+                -- Also check if click is not on theme button
+                local buttonPos = THEME_BUTTON.AbsolutePosition
+                local buttonSize = THEME_BUTTON.AbsoluteSize
+                local isNotOnButton = not (mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+                                         mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y)
+                
+                if isOutside and isNotOnButton then
                     THEME_DROPDOWN.Visible = false
                 end
             end
         end
     end)
     
-    -- Toggle for custom cursor
+    -- Toggle for custom cursor - Moved to center
     local CURSOR_TOGGLE = Library:Create("TextButton", {
         Parent = TOPBAR,
         Size = UDim2.new(0, 30, 0, 14),
-        Position = UDim2.new(1, -75, 0, 2),
+        Position = UDim2.new(0.5, 15, 0, 2), -- Right of center
         BackgroundColor3 = Library.Colors.Section,
         BorderSizePixel = 1,
         BorderColor3 = Library.Colors.BorderColor,
@@ -927,6 +981,7 @@ ab.AddWindow = function (options)
         AnchorPoint = Vector2.new(0,0.5),
         Name = "TabContainer"
     })
+    
     Library:Create("UIPadding", { -- tab padding
         Parent = TABCONTAINER,
         PaddingTop = UDim.new(0, 10),
@@ -934,6 +989,7 @@ ab.AddWindow = function (options)
         PaddingRight = UDim.new(0, 10),
         PaddingBottom = UDim.new(0, 10)
     })
+    
     Library:Create("UIListLayout", { -- tab layout
         Parent = TABCONTAINER,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -942,10 +998,12 @@ ab.AddWindow = function (options)
         VerticalAlignment = Enum.VerticalAlignment.Top,
         Padding = UDim.new(0, 8),
     })
+    
     Library:Create("UIStroke", { -- outline
         Parent = TABCONTAINER,
         Color = Library.Colors.BorderColor
     })
+    
     local INNERCONTAINER = Library:Create("Frame", {
         Parent = WINDOW,
         Size = UDim2.new(1, -150, 1, -35),
@@ -954,11 +1012,13 @@ ab.AddWindow = function (options)
         BorderSizePixel = 0,
         Name = "InnerContainer",
     })
+    
     Library:Create("UIStroke", { -- inner outline
         Parent = INNERCONTAINER,
         Color = Library.Colors.BorderColor,
         LineJoinMode = Enum.LineJoinMode.Miter,
     })
+    
     local function deactivate(tab)
         for _, content in ipairs(INNERCONTAINER:GetChildren()) do
             if content.Name == tab.Name then
@@ -971,7 +1031,9 @@ ab.AddWindow = function (options)
         Library:tween(tab.TabText, {TextColor3 = Library.Colors.TabInactive})
         Library:tween(tab.TabOverlay, {BackgroundTransparency = 1})
     end
+    
     local watermarkStartTime = os.clock()
+    
     function Library:WatermarkTextTriggers(text)
         local AccentColor = Library.Colors.Accent
         local elapsed = os.clock() - watermarkStartTime
@@ -1006,7 +1068,7 @@ ab.AddWindow = function (options)
         return text
     end
  
-    -- Optimized Watermark Update - Using original code
+    -- Optimized Watermark Update - Fixed to continue updating when GUI is hidden
     local watermarkContent = "{name} |User: {user} | Usage: {usage} | Ping: {ping}ms | Fps: {fps} |RealTime : {time} | Date: {date} | ServerTime: {ServerTime} "
     local watermarkTick = Library.Settings.WatermarkUpdateRate
     local watermarkLastUpdate = os.clock()
@@ -1033,21 +1095,8 @@ ab.AddWindow = function (options)
         end
     end
     
+    -- Always run watermark update regardless of GUI visibility
     watermarkConnection = Library:connection(_runservice.RenderStepped, updateWatermark)
-    
-    -- Pause watermark updates when UI is hidden
-    Library:connection(WINDOW:GetPropertyChangedSignal("Visible"), function()
-        if not WINDOW.Visible then
-            if watermarkConnection then
-                watermarkConnection:Disconnect()
-                watermarkConnection = nil
-            end
-        else
-            if not watermarkConnection then
-                watermarkConnection = Library:connection(_runservice.RenderStepped, updateWatermark)
-            end
-        end
-    end)
     
     if options.WaterMark.Enabled then 
         Library:ToggleWatermark(true)
@@ -1165,7 +1214,6 @@ ab.AddWindow = function (options)
                 end
                 Activate(tab)
             end
-
             Library:connection(TAB.MouseEnter, function()
                 if menu.CurrentTab ~= TAB then Library:tween(TABTEXT, {TextColor3 = Library.Colors.TabActive}) end
                 local input = Library:connection(_uis.InputBegan, function(key)
@@ -1534,11 +1582,15 @@ ab.AddWindow = function (options)
                     Library:AddTooltip(BUTTON, options.tooltip)
                 end
                 
-                do -- Functionality
+                do -- Functionality with improved animation
                     Library:connection(BUTTON.MouseEnter, function()
                         Library:tween(BUTTONTITLE, {TextColor3 = Library.Colors.ElementActive})
                         local input = Library:connection(_uis.InputBegan, function(input)
                             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                -- Smooth color transition animation
+                                Library:tween(BUTTON, {BackgroundColor3 = Library.Colors.Accent})
+                                task.wait(0.1)
+                                Library:tween(BUTTON, {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
                                 options.callback()
                             end
                         end)
@@ -1742,7 +1794,7 @@ ab.AddWindow = function (options)
                     Library:AddTooltip(TOGGLE, options.tooltip)
                 end
                 
-                do -- Functionality
+                do -- Functionality with improved animation
                     Library:connection(TOGGLE.MouseEnter, function()
                         Library:tween(TOGGLE_OUTLINE, {Color = Library.Colors.Accent})
                         local input = Library:connection(_uis.InputBegan, function(input)
@@ -1750,6 +1802,7 @@ ab.AddWindow = function (options)
                                 toggle.State = not toggle.State
                                 options.callback(toggle.State)
                                 if toggle.State then
+                                    -- Smooth color transition
                                     Library:tween(TOGGLE, {BackgroundColor3 = Library.Colors.Accent})
                                     Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.ElementActive})
                                 else
@@ -2348,7 +2401,7 @@ ab.AddWindow = function (options)
                 
                 return toggle
             end
-
+            
             function section:AddSlider(options)
                 options = Library:validate({
                     name = "example slider",
@@ -2486,7 +2539,7 @@ ab.AddWindow = function (options)
                     Library:AddTooltip(SLIDERBACK, options.tooltip)
                 end
                 
-                -- Methods
+                -- Methods - Fixed math.clamp error
                 function slider:SetValue(v)
                     local slidervalue
                     if v == nil then
@@ -2501,7 +2554,7 @@ ab.AddWindow = function (options)
                         if v and tonumber(v) then
                             slidervalue = math.clamp(math.round(v), options.min, options.max)
                         else
-                            slidervalue = 0 -- Rỗng hoặc không phải số, về 0
+                            slidervalue = options.min -- Rỗng hoặc không phải số, về min
                         end
                     end
                     SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
@@ -2513,7 +2566,7 @@ ab.AddWindow = function (options)
                 function slider:GetValue()
                     local text = TEXTBOX.Text
                     if text == "" or not tonumber(text) then
-                        return nil -- Rỗng hoặc không phải số, trả về nil
+                        return options.min -- Rỗng hoặc không phải số, trả về min
                     end
                     return tonumber(text)
                 end
@@ -2878,7 +2931,7 @@ ab.AddWindow = function (options)
                     dropdown:AddChoice(v)
                 end
                 
-                -- Dropdown Functionality
+                -- Dropdown Functionality - Fixed click-through issue
                 do
                     -- Dynamic Sizing
                     local endsize = 0
@@ -2908,10 +2961,16 @@ ab.AddWindow = function (options)
                                     Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive})
                                     Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - 13)})
                                     Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - 2)})
+                                    -- Set high ZIndex to prevent click-through
+                                    ACTIVECHOICE.ZIndex = 1000
+                                    CHOICEHOLDER.ZIndex = 1000
                                 else
                                     Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
                                     Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
                                     Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
+                                    -- Reset ZIndex
+                                    ACTIVECHOICE.ZIndex = dropdownindex + 5
+                                    CHOICEHOLDER.ZIndex = dropdownindex + 5
                                 end
                             end
                         end)
@@ -3166,6 +3225,24 @@ ab.AddWindow = function (options)
         tooltip = "Toggle custom cursor visibility"
     })
     
+    -- Anti-screen recording toggle
+    settingsSection:AddToggle({
+        name = "Anti Screen Recording",
+        default = Library.Settings.AntiScreenRecording,
+        callback = function(value)
+            Library.Settings.AntiScreenRecording = value
+            SCREENGUI.GuiVisibleForCapture = not value
+            Library:SaveConfig()
+            
+            Library:Notify({
+                title = "Anti-Recording " .. (value and "Enabled" or "Disabled"),
+                text = "GUI will " .. (value and "not" or "be") .. " visible in screen recordings",
+                duration = 3
+            })
+        end,
+        tooltip = "Hide GUI from screen recordings and screenshots"
+    })
+    
     settingsSection:AddSlider({
         name = "Watermark Update Rate",
         default = Library.Settings.WatermarkUpdateRate * 10,
@@ -3190,8 +3267,9 @@ ab.AddWindow = function (options)
         _uis.MouseIconEnabled = false
         Library:connection(_uis.InputBegan, function(input)
             if input.KeyCode == Library.Ui_Bind then
-                SCREENGUI.Enabled = not SCREENGUI.Enabled
-                _uis.MouseIconEnabled = not SCREENGUI.Enabled
+                Library.GuiVisible = not Library.GuiVisible
+                SCREENGUI.Enabled = Library.GuiVisible
+                _uis.MouseIconEnabled = not Library.GuiVisible
             end
         end)
         
@@ -3279,6 +3357,7 @@ ab.AddWindow = function (options)
         end
     end
     
+    -- Fixed GUI dragging functionality
     do -- Drag GUI
         local dragging = false
         local dragInput
@@ -3292,7 +3371,7 @@ ab.AddWindow = function (options)
             WINDOW.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY)
         end
     
-        Library:connection(INNERCONTAINER.InputBegan, function(input)
+        Library:connection(TOPBAR.InputBegan, function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 if not _G.isDraggingSlider then -- Chỉ kéo GUI nếu không kéo slider
                     dragging = true
