@@ -12,7 +12,7 @@ local Themes = {
     Default = {
         Window = Color3.fromRGB(9, 9, 9),
         BorderColor = Color3.fromRGB(40, 40, 40),
-        Accent = Color3.fromRGB(139, 158, 252),
+        Accent = Color3.fromRGB(139, 158, 252), -- Normal 116, 97, 202
         TopBar = Color3.fromRGB(9, 9, 9),
         TopText = Color3.fromRGB(100,100,100),
         TabContainer = Color3.fromRGB(9, 9, 9),
@@ -81,8 +81,11 @@ local Library = {
         AnimationsEnabled = true,
         AutoScale = true,
         SaveConfig = true,
-        ConfigName = "FunnyKM_Config.json"
-    }
+        ConfigName = "FunnyKM_Config.json",
+        ShowCustomCursor = true
+    },
+    ScreenSize = workspace.CurrentCamera.ViewportSize,
+    Cursors = {} -- For multiple touch points on mobile
 }
 
 -- Load/Save Config System
@@ -257,7 +260,7 @@ function lerp(startValue, endValue, duration, callback)
     end
 end
 
--- Notification System
+-- Notification System - Fixed mousebutton1click error
 function Library:Notify(options)
     if not self.Settings.NotificationsEnabled then return end
     
@@ -323,7 +326,7 @@ function Library:Notify(options)
         Text = options.text,
         TextColor3 = self.Colors.ElementActive,
         TextSize = 12,
-        FontFace = self.Font,
+        FontFace = Library.Font,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         TextWrapped = true,
@@ -341,6 +344,16 @@ function Library:Notify(options)
         })
     end
     
+    -- Add a TextButton for click detection instead of using MouseButton1Click on Frame
+    local CLICK_BUTTON = self:Create("TextButton", {
+        Parent = NOTIFICATION_FRAME,
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        ZIndex = 102
+    })
+    
     -- Animate in
     self:tween(NOTIFICATION_FRAME, {Position = UDim2.new(1, -320, 1, -100)})
     
@@ -353,7 +366,7 @@ function Library:Notify(options)
     end)
     
     -- Click handler
-    self:connection(NOTIFICATION_FRAME.MouseButton1Click, function()
+    self:connection(CLICK_BUTTON.MouseButton1Click, function()
         options.callback()
         self:tween(NOTIFICATION_FRAME, {Position = UDim2.new(1, 20, 1, -100)}, function()
             NOTIFICATION_FRAME:Destroy()
@@ -397,21 +410,21 @@ function Library:AddTooltip(element, text)
     
     table.insert(self.Tooltips, TOOLTIP)
     
-    local function updatePosition()
-        local mousePos = _uis:GetMouseLocation()
+    local function updatePosition(inputPosition)
+        local mousePos = inputPosition or _uis:GetMouseLocation()
         TOOLTIP.Position = UDim2.new(0, mousePos.X + 10, 0, mousePos.Y + 10)
     end
     
-    self:connection(element.MouseEnter, function()
+    Library:connection(element.MouseEnter, function()
         TOOLTIP.Visible = true
         updatePosition()
     end)
     
-    self:connection(element.MouseLeave, function()
+    Library:connection(element.MouseLeave, function()
         TOOLTIP.Visible = false
     end)
     
-    self:connection(_runservice.RenderStepped, function()
+    Library:connection(_runservice.RenderStepped, function()
         if TOOLTIP.Visible then
             updatePosition()
         end
@@ -420,7 +433,7 @@ function Library:AddTooltip(element, text)
     return TOOLTIP
 end
 
--- Theme Switching
+-- Theme Switching - Fixed theme dropdown
 function Library:SetTheme(themeName)
     if self.Themes[themeName] then
         self.CurrentTheme = themeName
@@ -494,21 +507,77 @@ function Library:OptimizeForMobile()
     end
 end
 
--- AutoScale System
+-- AutoScale System - Improved to be more visible
 function Library:AutoScale(element)
     if not self.Settings.AutoScale then return end
     
-    local ASPECT_RATIO = element:FindFirstChild("UIAspectRatioConstraint")
-    if not ASPECT_RATIO then
-        ASPECT_RATIO = self:Create("UIAspectRatioConstraint", {
+    -- Remove existing constraint if any
+    local existingConstraint = element:FindFirstChild("UIAspectRatioConstraint")
+    if existingConstraint then
+        existingConstraint:Destroy()
+    end
+    
+    -- Create new constraint
+    local ASPECT_RATIO = self:Create("UIAspectRatioConstraint", {
+        Parent = element,
+        AspectRatio = element.AbsoluteSize.X / element.AbsoluteSize.Y,
+        DominantAxis = Enum.DominantAxis.Width,
+        Name = "AutoScaleConstraint"
+    })
+    
+    -- Add UIListLayout to help with scaling
+    if not element:FindFirstChild("UIListLayout") then
+        self:Create("UIListLayout", {
             Parent = element,
-            AspectRatio = element.AbsoluteSize.X / element.AbsoluteSize.Y,
-            DominantAxis = Enum.DominantAxis.Width
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            VerticalAlignment = Enum.VerticalAlignment.Top
         })
     end
     
     return ASPECT_RATIO
 end
+
+-- Screen boundary checking
+function Library:KeepInScreenBounds(element)
+    local function updatePosition()
+        if element and element.Parent then
+            local pos = element.Position
+            local size = element.AbsoluteSize
+            local screenSize = Library.ScreenSize
+            
+            -- Calculate boundaries
+            local minX = 0
+            local minY = 0
+            local maxX = screenSize.X - size.X
+            local maxY = screenSize.Y - size.Y
+            
+            -- Adjust position if needed
+            local newX = math.clamp(pos.X.Offset + pos.X.Scale * screenSize.X, minX, maxX)
+            local newY = math.clamp(pos.Y.Offset + pos.Y.Scale * screenSize.Y, minY, maxY)
+            
+            -- Update position
+            element.Position = UDim2.new(0, newX, 0, newY)
+        end
+    end
+    
+    -- Update when screen size changes
+    Library:connection(workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"), function()
+        Library.ScreenSize = workspace.CurrentCamera.ViewportSize
+        updatePosition()
+    end)
+    
+    -- Initial update
+    updatePosition()
+    
+    return updatePosition
+end
+
+-- Update screen size when it changes
+Library:connection(workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"), function()
+    Library.ScreenSize = workspace.CurrentCamera.ViewportSize
+end)
 
 local SCREENGUI
 local productInfo = _marketplaceservice:GetProductInfo(game.PlaceId)
@@ -542,6 +611,7 @@ ab.AddWindow = function (options)
     -- AutoScale for main window
     Library:AutoScale(SCREENGUI)
     
+    -- Original Watermark from the original code
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
         Parent = SCREENGUI,
@@ -700,7 +770,7 @@ ab.AddWindow = function (options)
         Name = "Title"
     })
     
-    -- Theme selector in topbar
+    -- Theme selector in topbar - Fixed
     local THEME_BUTTON = Library:Create("TextButton", {
         Parent = TOPBAR,
         Size = UDim2.new(0, 30, 0, 14),
@@ -722,7 +792,7 @@ ab.AddWindow = function (options)
     
     Library:AddTooltip(THEME_BUTTON, "Change UI Theme")
     
-    -- Theme dropdown
+    -- Theme dropdown - Fixed to show properly
     local THEME_DROPDOWN = Library:Create("Frame", {
         Parent = SCREENGUI,
         Size = UDim2.new(0, 100, 0, 100),
@@ -739,7 +809,21 @@ ab.AddWindow = function (options)
         CornerRadius = UDim.new(0, 4)
     })
     
-    local themeY = 5
+    -- Add a label to show it's working
+    Library:Create("TextLabel", {
+        Parent = THEME_DROPDOWN,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "Select Theme:",
+        TextColor3 = Library.Colors.ElementActive,
+        TextSize = 10,
+        FontFace = Library.Font,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 101
+    })
+    
+    local themeY = 25 -- Start below the label
     for themeName, _ in pairs(Library.Themes) do
         local THEME_OPTION = Library:Create("TextButton", {
             Parent = THEME_DROPDOWN,
@@ -751,7 +835,8 @@ ab.AddWindow = function (options)
             TextColor3 = Library.Colors.ElementActive,
             TextSize = 10,
             FontFace = Library.Font,
-            Name = themeName .. "Option"
+            Name = themeName .. "Option",
+            ZIndex = 101
         })
         
         Library:connection(THEME_OPTION.MouseButton1Click, function()
@@ -773,7 +858,10 @@ ab.AddWindow = function (options)
     Library:connection(THEME_BUTTON.MouseButton1Click, function()
         THEME_DROPDOWN.Visible = not THEME_DROPDOWN.Visible
         if THEME_DROPDOWN.Visible then
+            -- Position dropdown below the button
             THEME_DROPDOWN.Position = UDim2.new(0, THEME_BUTTON.AbsolutePosition.X, 0, THEME_BUTTON.AbsolutePosition.Y + THEME_BUTTON.AbsoluteSize.Y + 5)
+            -- Adjust dropdown height based on content
+            THEME_DROPDOWN.Size = UDim2.new(0, 100, 0, themeY + 5)
         end
     end)
     
@@ -791,6 +879,44 @@ ab.AddWindow = function (options)
                 end
             end
         end
+    end)
+    
+    -- Toggle for custom cursor
+    local CURSOR_TOGGLE = Library:Create("TextButton", {
+        Parent = TOPBAR,
+        Size = UDim2.new(0, 30, 0, 14),
+        Position = UDim2.new(1, -75, 0, 2),
+        BackgroundColor3 = Library.Colors.Section,
+        BorderSizePixel = 1,
+        BorderColor3 = Library.Colors.BorderColor,
+        Text = "Cursor",
+        TextColor3 = Library.Colors.ElementActive,
+        TextSize = 8,
+        FontFace = Library.Font,
+        Name = "CursorToggle"
+    })
+    
+    Library:Create("UICorner", {
+        Parent = CURSOR_TOGGLE,
+        CornerRadius = UDim.new(0, 4)
+    })
+    
+    Library:AddTooltip(CURSOR_TOGGLE, "Toggle Custom Cursor")
+    
+    Library:connection(CURSOR_TOGGLE.MouseButton1Click, function()
+        Library.Settings.ShowCustomCursor = not Library.Settings.ShowCustomCursor
+        Library:SaveConfig()
+        
+        -- Show/hide all cursors
+        for _, cursor in pairs(Library.Cursors) do
+            cursor.Visible = Library.Settings.ShowCustomCursor
+        end
+        
+        Library:Notify({
+            title = "Cursor Toggled",
+            text = "Custom cursor is now " .. (Library.Settings.ShowCustomCursor and "enabled" or "disabled"),
+            duration = 2
+        })
     end)
     
     local TABCONTAINER = Library:Create("Frame", {
@@ -880,7 +1006,7 @@ ab.AddWindow = function (options)
         return text
     end
  
-    -- Optimized Watermark Update
+    -- Optimized Watermark Update - Using original code
     local watermarkContent = "{name} |User: {user} | Usage: {usage} | Ping: {ping}ms | Fps: {fps} |RealTime : {time} | Date: {date} | ServerTime: {ServerTime} "
     local watermarkTick = Library.Settings.WatermarkUpdateRate
     local watermarkLastUpdate = os.clock()
@@ -3025,6 +3151,21 @@ ab.AddWindow = function (options)
         tooltip = "Automatically scale UI for different screen sizes"
     })
     
+    settingsSection:AddToggle({
+        name = "Show Custom Cursor",
+        default = Library.Settings.ShowCustomCursor,
+        callback = function(value)
+            Library.Settings.ShowCustomCursor = value
+            Library:SaveConfig()
+            
+            -- Show/hide all cursors
+            for _, cursor in pairs(Library.Cursors) do
+                cursor.Visible = value
+            end
+        end,
+        tooltip = "Toggle custom cursor visibility"
+    })
+    
     settingsSection:AddSlider({
         name = "Watermark Update Rate",
         default = Library.Settings.WatermarkUpdateRate * 10,
@@ -3062,19 +3203,80 @@ ab.AddWindow = function (options)
         end)
     end
     
+    -- Improved Mouse Cursor System with multi-touch support
     do -- Mouse Cursor
-        local CURSOR = Library:Create("ImageLabel", {
-            Size = UDim2.new(0, 18, 0, 18),
-            BackgroundTransparency = 1,
-            ImageColor3 = Library.Colors.Accent,
-            Image = "rbxassetid://17404277477",
-            ZIndex = 100,
-            Parent = SCREENGUI,
-        })
+        -- Function to create a cursor for a specific touch point
+        local function createCursor(touchId)
+            local CURSOR = Library:Create("ImageLabel", {
+                Size = UDim2.new(0, 18, 0, 18),
+                BackgroundTransparency = 1,
+                ImageColor3 = Library.Colors.Accent,
+                Image = "rbxassetid://17404277477",
+                ZIndex = 100,
+                Parent = SCREENGUI,
+                Name = "Cursor_" .. tostring(touchId),
+                Visible = Library.Settings.ShowCustomCursor
+            })
+            
+            -- Store cursor reference
+            Library.Cursors[touchId] = CURSOR
+            
+            return CURSOR
+        end
         
+        -- Create main cursor for mouse
+        local mainCursor = createCursor("Mouse")
+        
+        -- Update main cursor position
         Library:connection(_runservice.RenderStepped, function() 
-            CURSOR.Position = UDim2.new(0, mouse.X -6, 0, mouse.Y - 2) 
+            if Library.Settings.ShowCustomCursor then
+                mainCursor.Position = UDim2.new(0, mouse.X - 6, 0, mouse.Y - 2)
+                mainCursor.Visible = true
+            else
+                mainCursor.Visible = false
+            end
         end)
+        
+        -- Handle touch events for mobile
+        if Library.MobileMode then
+            Library:connection(_uis.TouchStarted, function(touch, processed)
+                if not processed then
+                    local touchId = tostring(touch.Id)
+                    
+                    -- Create cursor for this touch if it doesn't exist
+                    if not Library.Cursors[touchId] then
+                        createCursor(touchId)
+                    end
+                    
+                    -- Update cursor position
+                    local cursor = Library.Cursors[touchId]
+                    cursor.Position = UDim2.new(0, touch.Position.X - 6, 0, touch.Position.Y - 2)
+                    cursor.Visible = Library.Settings.ShowCustomCursor
+                end
+            end)
+            
+            Library:connection(_uis.TouchMoved, function(touch, processed)
+                if not processed then
+                    local touchId = tostring(touch.Id)
+                    local cursor = Library.Cursors[touchId]
+                    
+                    if cursor then
+                        cursor.Position = UDim2.new(0, touch.Position.X - 6, 0, touch.Position.Y - 2)
+                    end
+                end
+            end)
+            
+            Library:connection(_uis.TouchEnded, function(touch, processed)
+                if not processed then
+                    local touchId = tostring(touch.Id)
+                    local cursor = Library.Cursors[touchId]
+                    
+                    if cursor then
+                        cursor.Visible = false
+                    end
+                end
+            end)
+        end
     end
     
     do -- Drag GUI
@@ -3114,6 +3316,9 @@ ab.AddWindow = function (options)
             end
         end)
     end
+    
+    -- Apply screen boundary checking to window
+    Library:KeepInScreenBounds(WINDOW)
     
     -- Show welcome notification
     Library:Notify({
