@@ -1990,7 +1990,7 @@ function section:AddDropdown(options)
         list = {"example 1", "example 2", "example 3", "example 4"},
         multi = true,
         max = 3,
-        default = nil, -- Thay đổi để có thể truyền vào tên hoặc chỉ số
+        default = nil,
         callback = function(active) end
     }, options or {})
     
@@ -2128,6 +2128,40 @@ function section:AddDropdown(options)
     -- Biến lưu trữ các lựa chọn để dễ quản lý
     local choices = {}
     
+    -- Hàm để chọn một lựa chọn trong chế độ single-select
+    local function selectChoice(name)
+        print("selectChoice called with:", name)
+        
+        -- Bỏ chọn tất cả các lựa chọn khác
+        for choiceName, choiceData in pairs(choices) do
+            choiceData.choice.state = false
+            Library:tween(choiceData.CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+            Library:tween(choiceData.CHOICEBAR, {BackgroundTransparency = 1})
+            Library:tween(choiceData.CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
+        end
+        
+        -- Chọn lựa chọn hiện tại
+        if choices[name] then
+            choices[name].choice.state = true
+            Library:tween(choices[name].CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+            Library:tween(choices[name].CHOICEBAR, {BackgroundTransparency = 0.5})
+            Library:tween(choices[name].CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
+            
+            dropdown.active = name
+            dropdown.currentSelection = name
+            ACTIVETEXT.Text = name
+            print("Selected method:", name)
+            options.callback(name)
+            
+            -- Đóng dropdown sau khi chọn trong chế độ đơn lựa chọn
+            dropdown.state = false
+            Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
+            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
+            Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
+            BLOCKINPUT.Visible = false
+        end
+    end
+    
     function dropdown:AddChoice(name)
         local choice = {
             Name = name,
@@ -2151,11 +2185,13 @@ function section:AddDropdown(options)
             end
         end
         
-        local CHOICE = Library:Create("Frame", {
+        -- Sử dụng TextButton thay vì Frame để đảm bảo có thể click được
+        local CHOICE = Library:Create("TextButton", {
             Size = UDim2.new(1,-2,0,15),
             Parent = CHOICEHOLDER,
             AnchorPoint = Vector2.new(0.5,0),
             BackgroundTransparency = 1,
+            Text = "",
             BorderSizePixel = 0,
             ZIndex = 10,
         })
@@ -2199,79 +2235,48 @@ function section:AddDropdown(options)
             Library:tween(CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
         end
         
-        -- Choice functionality
-        Library:connection(CHOICE.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                print("Clicked on:", name) -- Debug
+        -- Choice functionality - Sử dụng MouseButton1Click thay vì InputBegan
+        CHOICE.MouseButton1Click:Connect(function()
+            print("Clicked on:", name)
+            
+            if dropdown.multi then
+                -- Multi-select mode
+                local count = 0
+                for _, v in ipairs(dropdown.active) do
+                    count = count + 1
+                end
                 
-                if dropdown.multi then
-                    -- Multi-select mode
-                    local count = 0
-                    for _, v in ipairs(dropdown.active) do
-                        count = count + 1
-                    end
-                    
-                    if choice.state == false and count < options.max then
-                        choice.state = true
-                        Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                        Library:tween(CHOICEBAR, {BackgroundTransparency = 0.5})
-                        table.insert(dropdown.active, choice.Name)
-                        ACTIVETEXT.Text = table.concat(dropdown.active, ", ")
-                        print("Multi-select added:", choice.Name, "Active:", table.concat(dropdown.active, ", "))
-                        options.callback(dropdown.active)
-                    elseif choice.state == true and count > options.min then
-                        choice.state = false
-                        Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                        Library:tween(CHOICEBAR, {BackgroundTransparency = 1})
-                        
-                        for i, name in ipairs(dropdown.active) do
-                            if name == choice.Name then
-                                table.remove(dropdown.active, i)
-                                ACTIVETEXT.Text = table.concat(dropdown.active, ", ")
-                                print("Multi-select removed:", choice.Name, "Active:", table.concat(dropdown.active, ", "))
-                                options.callback(dropdown.active)
-                                break
-                            end
-                        end
-                    end
-                else
-                    -- Single-select mode (ĐÃ SỬA LỖI)
-                    print("Single-select mode, selecting:", name)
-                    
-                    -- Bỏ chọn tất cả các lựa chọn khác
-                    for choiceName, choiceData in pairs(choices) do
-                        if choiceName ~= name then
-                            choiceData.choice.state = false
-                            Library:tween(choiceData.CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                            Library:tween(choiceData.CHOICEBAR, {BackgroundTransparency = 1})
-                            Library:tween(choiceData.CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                        end
-                    end
-                    
-                    -- Chọn lựa chọn hiện tại
+                if choice.state == false and count < options.max then
                     choice.state = true
                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
                     Library:tween(CHOICEBAR, {BackgroundTransparency = 0.5})
-                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
+                    table.insert(dropdown.active, choice.Name)
+                    ACTIVETEXT.Text = table.concat(dropdown.active, ", ")
+                    print("Multi-select added:", choice.Name, "Active:", table.concat(dropdown.active, ", "))
+                    options.callback(dropdown.active)
+                elseif choice.state == true and count > options.min then
+                    choice.state = false
+                    Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                    Library:tween(CHOICEBAR, {BackgroundTransparency = 1})
                     
-                    dropdown.active = choice.Name
-                    dropdown.currentSelection = choice.Name
-                    ACTIVETEXT.Text = choice.Name
-                    print("Selected method:", choice.Name) -- Debug
-                    options.callback(choice.Name)  -- Gọi callback với giá trị mới
-                    
-                    -- Đóng dropdown sau khi chọn trong chế độ đơn lựa chọn
-                    dropdown.state = false
-                    Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
-                    Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
-                    BLOCKINPUT.Visible = false
+                    for i, name in ipairs(dropdown.active) do
+                        if name == choice.Name then
+                            table.remove(dropdown.active, i)
+                            ACTIVETEXT.Text = table.concat(dropdown.active, ", ")
+                            print("Multi-select removed:", choice.Name, "Active:", table.concat(dropdown.active, ", "))
+                            options.callback(dropdown.active)
+                            break
+                        end
+                    end
                 end
+            else
+                -- Single-select mode
+                selectChoice(name)
             end
         end)
         
         -- Thêm MouseEnter và MouseLeave
-        Library:connection(CHOICE.MouseEnter, function()
+        CHOICE.MouseEnter:Connect(function()
             if not choice.state then
                 Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
                 Library:tween(CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
@@ -2279,7 +2284,7 @@ function section:AddDropdown(options)
             choice.Hover = true
         end)
         
-        Library:connection(CHOICE.MouseLeave, function()
+        CHOICE.MouseLeave:Connect(function()
             if not choice.state then
                 Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
                 Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
@@ -2304,7 +2309,7 @@ function section:AddDropdown(options)
         -- Dynamic sizing
         local endsize = 0
         for _, choice in ipairs(CHOICEHOLDER:GetChildren()) do
-            if choice:IsA("Frame") then
+            if choice:IsA("TextButton") then
                 if endsize + choice.AbsoluteSize.Y > 100 then 
                     endsize = 100
                 else 
@@ -2314,60 +2319,57 @@ function section:AddDropdown(options)
         end
         
         local Cholderhovered = false
-        Library:connection(CHOICEHOLDER.MouseEnter, function()
+        CHOICEHOLDER.MouseEnter:Connect(function()
             Cholderhovered = true
-            local leave
-            leave = Library:connection(CHOICEHOLDER.MouseLeave, function()
-                leave:Disconnect()
-                Cholderhovered = false
-            end)
         end)
         
-        Library:connection(ACTIVECHOICE.MouseEnter, function()
+        CHOICEHOLDER.MouseLeave:Connect(function()
+            Cholderhovered = false
+        end)
+        
+        ACTIVECHOICE.MouseEnter:Connect(function()
             if not dropdown.state then 
                 Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive}) 
             end
         end)
         
-        Library:connection(ACTIVECHOICE.MouseLeave, function()
+        ACTIVECHOICE.MouseLeave:Connect(function()
             if not dropdown.state then
                 Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
             end
         end)
         
-        Library:connection(ACTIVECHOICE.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and not Cholderhovered then
-                dropdown.state = not dropdown.state
+        -- Sử dụng MouseButton1Click thay vì InputBegan
+        ACTIVECHOICE.MouseButton1Click:Connect(function()
+            dropdown.state = not dropdown.state
+            
+            if dropdown.state then
+                -- Mở dropdown
+                Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive})
+                Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - 13)})
+                Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - 2)})
+                BLOCKINPUT.Visible = true
                 
-                if dropdown.state then
-                    -- Mở dropdown
-                    Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive})
-                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - 13)})
-                    Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - 2)})
-                    BLOCKINPUT.Visible = true
-                    
-                    -- Bấm vào nút chặn sẽ đóng dropdown
-                    Library:connection(BLOCKINPUT.MouseButton1Click, function()
-                        dropdown.state = false
-                        Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                        Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
-                        Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
-                        BLOCKINPUT.Visible = false
-                    end)
-                else
-                    -- Đóng dropdown
+                -- Bấm vào nút chặn sẽ đóng dropdown
+                BLOCKINPUT.MouseButton1Click:Connect(function()
+                    dropdown.state = false
                     Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
                     Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
                     Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
                     BLOCKINPUT.Visible = false
-                end
+                end)
+            else
+                -- Đóng dropdown
+                Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
+                Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
+                BLOCKINPUT.Visible = false
             end
         end)
     end
     
     return dropdown
 end
-            
             -- List element
             function section:AddList(options)
                 options = Library:validate({
