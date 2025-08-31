@@ -1980,9 +1980,8 @@ ab.AddWindow = function (options)
                 
                 options.callback(slider:GetValue())
                 
-                return slider
-            end
-            
+return slider 
+            end 
             function section:AddDropdown(options)
                 options = Library:validate({
                     name = "example dropdown",
@@ -2113,12 +2112,9 @@ ab.AddWindow = function (options)
                 
                 -- Hàm để chọn một lựa chọn
                 local function selectChoice(name)
-                    print("selectChoice called with:", name)
-                    
                     dropdown.active = name
                     dropdown.currentSelection = name
                     ACTIVETEXT.Text = name
-                    print("Selected method:", name)
                     
                     -- Gọi callback với giá trị mới
                     options.callback(name)
@@ -2182,7 +2178,6 @@ ab.AddWindow = function (options)
                     
                     -- Xử lý click
                     CLICKABLE.MouseButton1Click:Connect(function()
-                        print("Clicked on:", name)
                         selectChoice(name)
                     end)
                     
@@ -2246,7 +2241,6 @@ ab.AddWindow = function (options)
                 end)
                 
                 -- Gọi callback với giá trị mặc định
-                print("Initial callback with:", defaultValue)
                 options.callback(defaultValue)
                 
                 return dropdown
