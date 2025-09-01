@@ -1,7 +1,5 @@
-local abc = { 
-abcd = "Ok"
- }
-if abcd == "Ok" then 
+
+if true then 
 return true 
 end
   
