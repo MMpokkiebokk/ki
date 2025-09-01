@@ -1,0 +1,7 @@
+local abc = { 
+abcd = "Ok"
+ }
+if abcd == "Ok" then 
+return true 
+end
+  
