@@ -2018,26 +2018,26 @@ function section:AddSlider(options)
             end
         end)
     
-        Library:connection(SLIDERBACK.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                slider.Dragging = true
-                _G.isDraggingSlider = true
+        Library:connection(_uis.InputEnded, function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
+                slider.Dragging = false
+                _G.isDraggingSlider = false
                 
-                -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
-                disableScrolling()
+                -- Khôi phục cuộn khi kết thúc kéo slider
+                enableScrolling()
                 
-                -- Chặn sự kiện cuộn chuột
-                cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
+                -- Hủy chặn sự kiện cuộn chuột
+                cas:UnbindAction("BlockScroll_" .. options.name)
                 
-                uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-                Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
+                uis.MouseBehavior = Enum.MouseBehavior.Default
+                Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Hiển thị text khi kéo
-                SLIDERVALUE.Visible = true
-                SLIDERVALUE.TextTransparency = 0
-                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
+                -- Chỉ ẩn text thay vì xóa nó
+                Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
+                    SLIDERVALUE.Visible = false
+                end)
                 
-                slider:SetValue()
+                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
         end)
     
