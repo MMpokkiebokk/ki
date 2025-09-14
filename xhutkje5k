@@ -514,38 +514,49 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        local LEFTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "LeftContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = LEFTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingLeft = UDim.new(0,10),
-        })
-        
-        local RIGHTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, 0, 0, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "RightContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = RIGHTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingRight = UDim.new(0,10),
-        })
-        
+       -- Thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER trong function tab:AddTab
+
+-- Left container setup
+local LEFTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "LeftContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    ScrollingEnabled = true,
+})
+
+Library:Create("UIPadding", {
+    Parent = LEFTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingLeft = UDim.new(0,10),
+})
+
+-- Right container setup
+local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "RightContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    ScrollingEnabled = true,
+})
+
+Library:Create("UIPadding", {
+    Parent = RIGHTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingRight = UDim.new(0,10),
+})
         -- Tab functionality
         local function Activate()
             CONTENTCONTAINER.Visible = true
@@ -891,7 +902,57 @@ function tab:AddSection(options)
         Padding = UDim.new(0, 8),
         Name = "ElementLayout"
     })
+    -- Thêm hàm cập nhật CanvasSize cho container
+local function updateContainerCanvasSize()
+    -- Cập nhật CanvasSize cho LEFTCONTAINER
+    if LEFTCONTAINER then
+        local leftLayout = LEFTCONTAINER:FindFirstChild("UIListLayout")
+        if leftLayout then
+            local leftPadding = LEFTCONTAINER:FindFirstChild("UIPadding")
+            local leftTopPadding = leftPadding and leftPadding.PaddingTop.Offset or 0
+            local leftBottomPadding = leftPadding and leftPadding.PaddingBottom.Offset or 0
+            local leftLeftPadding = leftPadding and leftPadding.PaddingLeft.Offset or 0
+            local leftRightPadding = leftPadding and leftPadding.PaddingRight.Offset or 0
+            
+            LEFTCONTAINER.CanvasSize = UDim2.new(
+                0, leftLayout.AbsoluteContentSize.X + leftLeftPadding + leftRightPadding,
+                0, leftLayout.AbsoluteContentSize.Y + leftTopPadding + leftBottomPadding
+            )
+        end
+    end
     
+    -- Cập nhật CanvasSize cho RIGHTCONTAINER
+    if RIGHTCONTAINER then
+        local rightLayout = RIGHTCONTAINER:FindFirstChild("UIListLayout")
+        if rightLayout then
+            local rightPadding = RIGHTCONTAINER:FindFirstChild("UIPadding")
+            local rightTopPadding = rightPadding and rightPadding.PaddingTop.Offset or 0
+            local rightBottomPadding = rightPadding and rightPadding.PaddingBottom.Offset or 0
+            local rightLeftPadding = rightPadding and rightPadding.PaddingLeft.Offset or 0
+            local rightRightPadding = rightPadding and rightPadding.PaddingRight.Offset or 0
+            
+            RIGHTCONTAINER.CanvasSize = UDim2.new(
+                0, rightLayout.AbsoluteContentSize.X + rightLeftPadding + rightRightPadding,
+                0, rightLayout.AbsoluteContentSize.Y + rightTopPadding + rightBottomPadding
+            )
+        end
+    end
+end
+
+-- Theo dõi khi thêm section mới để cập nhật CanvasSize
+Library:connection(LEFTCONTAINER.ChildAdded, function(child)
+    if child:IsA("Frame") then
+        game:GetService("RunService").Heartbeat:Wait()
+        updateContainerCanvasSize()
+    end
+end)
+
+Library:connection(RIGHTCONTAINER.ChildAdded, function(child)
+    if child:IsA("Frame") then
+        game:GetService("RunService").Heartbeat:Wait()
+        updateContainerCanvasSize()
+    end
+end)
     -- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
     local function updateCanvasSize()
         local UIListLayout = ELEMENTCONTAINER:FindFirstChild("ElementLayout")
