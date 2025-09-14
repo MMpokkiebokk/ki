@@ -1882,25 +1882,33 @@ function section:AddSlider(options)
         Rotation = 90,
     })
     
+    -- Tạo một TextLabel riêng để hiển thị giá trị khi kéo
     local SLIDERVALUE = Library:Create("TextLabel", {
-        Size = UDim2.new(0, 20, 0, 10),
-        Parent = SLIDER,
+        Size = UDim2.new(0, 40, 0, 16),
+        Parent = SLIDERBACK,
         TextXAlignment = Enum.TextXAlignment.Center,
-        Position = UDim2.new(1, -10, 0, -15),
-        BackgroundTransparency = 1,
-        TextColor3 = Library.Colors.ElementInactive,
+        Position = UDim2.new(0.5, 0, 0, -20),
+        AnchorPoint = Vector2.new(0.5, 1),
+        BackgroundColor3 = Library.Colors.Window,
+        BorderColor3 = Library.Colors.BorderColor,
+        TextColor3 = Library.Colors.Accent,
         FontFace = Library.Font,
-        Text = math.round(options.value),
-        TextTransparency = 1,
-        TextSize = 8,
-        Name = options.name,
-        Visible = false
+        Text = tostring(options.default),
+        TextSize = 9,
+        Name = "SliderValue",
+        Visible = false, -- Bắt đầu ẩn
+        ZIndex = 10
     })
     
     Library:Create("UIStroke", {
         Thickness = 1,
         Color = Color3.new(0, 0, 0),
         Parent = SLIDERVALUE
+    })
+    
+    Library:Create("UICorner", {
+        Parent = SLIDERVALUE,
+        CornerRadius = UDim.new(0, 3)
     })
     
     local TEXTBOX = Library:Create("TextBox", {
@@ -1939,6 +1947,8 @@ function section:AddSlider(options)
                 slidervalue = 0
             end
         end
+        
+        -- Cập nhật giá trị hiển thị
         SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
         SLIDER:TweenSize(UDim2.fromScale((slidervalue - options.min) / (options.max - options.min), 1), Enum.EasingDirection.In, Enum.EasingStyle.Linear, 0.1, true)
         TEXTBOX.Text = slidervalue
@@ -1955,7 +1965,6 @@ function section:AddSlider(options)
     
     -- Initialize slider
     SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1)
-    SLIDERVALUE.Text = options.default .. (options.suffix or "")
     TEXTBOX.Text = options.default
     
     -- Hàm để vô hiệu hóa cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
@@ -1985,87 +1994,81 @@ function section:AddSlider(options)
         return Enum.ContextActionResult.Pass
     end
     
--- Slider functionality
-do
-    Library:connection(SLIDERBACK.MouseEnter, function()
-        slider.Hover = true
-        Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
-    end)
-
-    Library:connection(SLIDERBACK.MouseLeave, function()
-        slider.Hover = false
-        if not slider.Dragging then
-            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-        end
-    end)
-
-    Library:connection(SLIDERBACK.InputBegan, function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            slider.Dragging = true
-            _G.isDraggingSlider = true
-            
-            -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
-            disableScrolling()
-            
-            -- Chặn sự kiện cuộn chuột
-            cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
-            
-            uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-            Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
-            
-            -- Hiển thị text khi kéo
-            SLIDERVALUE.Visible = true
-            SLIDERVALUE.TextTransparency = 0
-            SLIDERVALUE.TextColor3 = Library.Colors.Accent
-            
-            slider:SetValue()
-        end
-    end)
-
-    Library:connection(SLIDERBACK.InputChanged, function(input)
-        if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            slider:SetValue()
-        end
-    end)
-
-    Library:connection(_uis.InputEnded, function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
-            slider.Dragging = false
-            _G.isDraggingSlider = false
-            
-            -- Khôi phục cuộn khi kết thúc kéo slider
-            enableScrolling()
-            
-            -- Hủy chặn sự kiện cuộn chuột
-            cas:UnbindAction("BlockScroll_" .. options.name)
-            
-            uis.MouseBehavior = Enum.MouseBehavior.Default
-            Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
-            
-            -- Ẩn text và khôi phục màu sắc ban đầu
-            Library:tween(SLIDERVALUE, {
-                TextTransparency = 1,
-                TextColor3 = Library.Colors.ElementInactive
-            })
-            
-            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-        end
-    end)
-
-    Library:connection(TEXTBOX.FocusLost, function(enterPressed)
-        if enterPressed then
-            slider:SetValue(TEXTBOX.Text)
-        end
-    end)
-
-    Library:connection(TEXTBOX.MouseEnter, function()
-        Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
-    end)
-
-    Library:connection(TEXTBOX.MouseLeave, function()
-        Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
-    end)
-end
+    -- Slider functionality
+    do
+        Library:connection(SLIDERBACK.MouseEnter, function()
+            slider.Hover = true
+            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
+        end)
+    
+        Library:connection(SLIDERBACK.MouseLeave, function()
+            slider.Hover = false
+            if not slider.Dragging then
+                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+            end
+        end)
+    
+        Library:connection(SLIDERBACK.InputBegan, function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                slider.Dragging = true
+                _G.isDraggingSlider = true
+                
+                -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
+                disableScrolling()
+                
+                -- Chặn sự kiện cuộn chuột
+                cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
+                
+                uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+                Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
+                
+                -- Hiển thị text khi kéo
+                SLIDERVALUE.Visible = true
+                slider:SetValue()
+            end
+        end)
+    
+        Library:connection(SLIDERBACK.InputChanged, function(input)
+            if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                slider:SetValue()
+            end
+        end)
+    
+        Library:connection(_uis.InputEnded, function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
+                slider.Dragging = false
+                _G.isDraggingSlider = false
+                
+                -- Khôi phục cuộn khi kết thúc kéo slider
+                enableScrolling()
+                
+                -- Hủy chặn sự kiện cuộn chuột
+                cas:UnbindAction("BlockScroll_" .. options.name)
+                
+                uis.MouseBehavior = Enum.MouseBehavior.Default
+                Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
+                
+                -- Ẩn text hoàn toàn khi ngừng kéo
+                SLIDERVALUE.Visible = false
+                
+                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+            end
+        end)
+    
+        Library:connection(TEXTBOX.FocusLost, function(enterPressed)
+            if enterPressed then
+                slider:SetValue(TEXTBOX.Text)
+            end
+        end)
+    
+        Library:connection(TEXTBOX.MouseEnter, function()
+            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
+        end)
+    
+        Library:connection(TEXTBOX.MouseLeave, function()
+            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
+        end)
+    end
     
     options.callback(slider:GetValue())
     
