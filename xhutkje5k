@@ -953,6 +953,56 @@ function tab:AddSection(options)
                         end
                     end
                 end
+                
+                -- Cập nhật vị trí cho các section tiếp theo
+                updateSectionPositions()
+            end
+        end
+    end
+    
+    -- Hàm cập nhật vị trí các section
+    local function updateSectionPositions()
+        if options.side == "Left" then
+            if getgenv().subtab then
+                local subtab = options.tab
+                if LeftHeight[subtab] then
+                    local currentPos = 15
+                    for i, section in pairs(CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("LeftContainer"):GetChildren()) do
+                        if section:IsA("Frame") and section.Name ~= "UIListLayout" and section.Name ~= "UIPadding" then
+                            section.Position = UDim2.new(0, 0, 0, currentPos - 12)
+                            currentPos = currentPos + section.AbsoluteSize.Y + 30
+                        end
+                    end
+                end
+            else
+                local currentPos = 15
+                for i, section in pairs(LEFTCONTAINER:GetChildren()) do
+                    if section:IsA("Frame") and section.Name ~= "UIListLayout" and section.Name ~= "UIPadding" then
+                        section.Position = UDim2.new(0, 0, 0, currentPos - 12)
+                        currentPos = currentPos + section.AbsoluteSize.Y + 30
+                    end
+                end
+            end
+        else
+            if getgenv().subtab then
+                local subtab = options.tab
+                if RightHeight[subtab] then
+                    local currentPos = 15
+                    for i, section in pairs(CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("RightContainer"):GetChildren()) do
+                        if section:IsA("Frame") and section.Name ~= "UIListLayout" and section.Name ~= "UIPadding" then
+                            section.Position = UDim2.new(0, 0, 0, currentPos - 12)
+                            currentPos = currentPos + section.AbsoluteSize.Y + 30
+                        end
+                    end
+                end
+            else
+                local currentPos = 15
+                for i, section in pairs(RIGHTCONTAINER:GetChildren()) do
+                    if section:IsA("Frame") and section.Name ~= "UIListLayout" and section.Name ~= "UIPadding" then
+                        section.Position = UDim2.new(0, 0, 0, currentPos - 12)
+                        currentPos = currentPos + section.AbsoluteSize.Y + 30
+                    end
+                end
             end
         end
     end
