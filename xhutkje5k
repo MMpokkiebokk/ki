@@ -796,7 +796,7 @@ function tab:AddSection(options)
         tab = nil,
         name = "preview",
         side = "Left",
-        height = "fill" -- fill, half,
+        height = "fill" -- fill, half, auto
     }, options or {})
     
     local section = { Hover = false, }
@@ -836,7 +836,7 @@ function tab:AddSection(options)
     end
 
     local SECTION = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, options.height),
+        Size = UDim2.new(1, 0, 0, options.height == "auto" and 50 or options.height), -- Giá trị mặc định cho "auto"
         AnchorPoint = Vector2.new(0, 0),
         BackgroundColor3 = Library.Colors.Section,
         Position = UDim2.new(0, 0, 0, NewPos - 12),
@@ -872,6 +872,7 @@ function tab:AddSection(options)
         ScrollBarThickness = 4, -- Hiển thị thanh cuộn
         ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
         BorderSizePixel = 0,
+        ScrollingEnabled = options.height ~= "auto" -- Tắt cuộn cho section "auto"
     })
 
     Library:Create("UIListLayout", { 
@@ -895,6 +896,11 @@ function tab:AddSection(options)
                 0, UIListLayout.AbsoluteContentSize.X + leftPadding + rightPadding,
                 0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding
             )
+            
+            -- Cập nhật kích thước section nếu là "auto"
+            if options.height == "auto" then
+                SECTION.Size = UDim2.new(1, 0, 0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding + 30) -- +30 cho tiêu đề section và padding
+            end
         end
     end
     
@@ -918,6 +924,8 @@ function tab:AddSection(options)
         SECTION.Size = UDim2.new(1,0,1,-pos)
     elseif options.height == "half" then
         SECTION.Size = UDim2.new(1,0,0.5,-pos/2)
+    elseif options.height == "auto" then
+        -- Đã được xử lý trong updateCanvasSize
     end
 
     -- Handle side picking
@@ -1779,274 +1787,269 @@ function tab:AddSection(options)
     end
     
     -- Slider element
-   -- Thay đổi phần AddSlider trong function section:AddSlider
-
--- Slider element
--- Thay đổi phần AddSlider trong function section:AddSlider
-
--- Slider element
-function section:AddSlider(options)
-    options = Library:validate({
-        name = "example slider",
-        default = 50,
-        suffix = "",
-        changeby = 5,
-        min = 0,
-        max = 100,
-        callback = function(value) end
-    }, options or {})
-    
-    local slider = {
-        MouseDown = false,
-        Hover = false,
-        Dragging = false,
-        Connection = nil
-    }
-    
-    if not _G.isDraggingSlider then
-        _G.isDraggingSlider = false
-    end
-    
-    local uis = game:GetService("UserInputService")
-    local cas = game:GetService("ContextActionService")
-    
-    options.value = 0
-    if options.min then
-        if options.default < options.min then
-            options.default = options.min
+    function section:AddSlider(options)
+        options = Library:validate({
+            name = "example slider",
+            default = 50,
+            suffix = "",
+            changeby = 5,
+            min = 0,
+            max = 100,
+            callback = function(value) end
+        }, options or {})
+        
+        local slider = {
+            MouseDown = false,
+            Hover = false,
+            Dragging = false,
+            Connection = nil
+        }
+        
+        if not _G.isDraggingSlider then
+            _G.isDraggingSlider = false
         end
-    end
-    
-    local SLIDERCONTAINER = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 20),
-        Parent = ELEMENTCONTAINER,
-        BackgroundTransparency = 1,
-        Name = "SliderContainer"
-    })
-    
-    local SLIDERTITLE = Library:Create("TextLabel", {
-        Parent = SLIDERCONTAINER,
-        Size = UDim2.new(1, -2, 1, -15),
-        Position = UDim2.new(0, 2, 0, 0),
-        BackgroundTransparency = 1,
-        TextColor3 = Library.Colors.ElementInactive,
-        TextSize = 9,
-        Text = options.name,
-        FontFace = Library.Font,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Name = "SliderTitle"
-    })
-    
-    local SLIDERBACK = Library:Create("Frame", {
-        Parent = SLIDERCONTAINER,
-        Size = UDim2.new(1, -60, 0, 6),
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
-        BorderSizePixel = 0,
-        Name = "SliderBack",
-        Active = true  -- Thêm dòng này để chặn sự kiện lan truyền
-    })
-    
-    local STROKE = Library:Create("UIStroke", {
-        Parent = SLIDERBACK,
-        Thickness = 1,
-        Color = Color3.fromRGB(0, 0, 0),
-        LineJoinMode = Enum.LineJoinMode.Miter,
-        Name = "UIStrokeBackSlider",
-        Transparency = 0
-    })
-    
-    Library:Create("UICorner", {
-        Parent = SLIDERBACK,
-        CornerRadius = UDim.new(0, 4)
-    })
-    
-    local SLIDER = Library:Create("Frame", {
-        Parent = SLIDERBACK,
-        Size = UDim2.new(1, -80, 1, 0),
-        Name = "Slider",
-        ZIndex = 1,
-        BorderSizePixel = 0
-    })
-    
-    Library:Create("UIGradient", {
-        Parent = SLIDER,
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0.00, Library.Colors.Accent),
-            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27, 27, 55))
-        },
-        Rotation = 90,
-    })
-    
-    local SLIDERVALUE = Library:Create("TextLabel", {
-        Size = UDim2.new(0, 20, 0, 10),
-        Parent = SLIDER,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        Position = UDim2.new(1, -10, 0, -15),
-        BackgroundTransparency = 1,
-        TextColor3 = Library.Colors.ElementInactive,
-        FontFace = Library.Font,
-        Text = math.round(options.value),
-        TextTransparency = 1,  -- Bắt đầu với trạng thái ẩn
-        TextSize = 8,
-        Name = options.name,
-        Visible = false  -- Bắt đầu với trạng thái ẩn
-    })
-    
-    Library:Create("UIStroke", {
-        Thickness = 1,
-        Color = Color3.new(0, 0, 0),
-        Parent = SLIDERVALUE
-    })
-    
-    local TEXTBOX = Library:Create("TextBox", {
-        Parent = SLIDERCONTAINER,
-        Size = UDim2.new(0, 50, 0, 14),
-        Position = UDim2.new(1, -55, 0.5, -7),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 10,
-        FontFace = Library.Font,
-        Text = tostring(options.default),
-        Name = "SliderTextBox"
-    })
-    
-    Library:Create("UICorner", {
-        Parent = TEXTBOX,
-        CornerRadius = UDim.new(0, 4)
-    })
-    
-    -- Slider methods
-    function slider:SetValue(v)
-        local slidervalue
-        if v == nil then
-            local mouseX = mouse.X
-            if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
-                local output = (mouseX - SLIDERBACK.AbsolutePosition.X) / SLIDERBACK.AbsoluteSize.X
-                slidervalue = math.clamp(math.round(output * (options.max - options.min) + options.min), options.min, options.max)
-            else
-                return
-            end
-        else
-            if v and tonumber(v) then
-                slidervalue = math.clamp(math.round(v), options.min, options.max)
-            else
-                slidervalue = 0
+        
+        local uis = game:GetService("UserInputService")
+        local cas = game:GetService("ContextActionService")
+        
+        options.value = 0
+        if options.min then
+            if options.default < options.min then
+                options.default = options.min
             end
         end
-        SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
-        SLIDER:TweenSize(UDim2.fromScale((slidervalue - options.min) / (options.max - options.min), 1), Enum.EasingDirection.In, Enum.EasingStyle.Linear, 0.1, true)
-        TEXTBOX.Text = slidervalue
-        options.callback(slider:GetValue())
-    end
+        
+        local SLIDERCONTAINER = Library:Create("Frame", {
+            Size = UDim2.new(1, 0, 0, 20),
+            Parent = ELEMENTCONTAINER,
+            BackgroundTransparency = 1,
+            Name = "SliderContainer"
+        })
+        
+        local SLIDERTITLE = Library:Create("TextLabel", {
+            Parent = SLIDERCONTAINER,
+            Size = UDim2.new(1, -2, 1, -15),
+            Position = UDim2.new(0, 2, 0, 0),
+            BackgroundTransparency = 1,
+            TextColor3 = Library.Colors.ElementInactive,
+            TextSize = 9,
+            Text = options.name,
+            FontFace = Library.Font,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Name = "SliderTitle"
+        })
+        
+        local SLIDERBACK = Library:Create("Frame", {
+            Parent = SLIDERCONTAINER,
+            Size = UDim2.new(1, -60, 0, 6),
+            AnchorPoint = Vector2.new(0, 1),
+            Position = UDim2.new(0, 0, 1, 0),
+            BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+            BorderSizePixel = 0,
+            Name = "SliderBack",
+            Active = true  -- Thêm dòng này để chặn sự kiện lan truyền
+        })
+        
+        local STROKE = Library:Create("UIStroke", {
+            Parent = SLIDERBACK,
+            Thickness = 1,
+            Color = Color3.fromRGB(0, 0, 0),
+            LineJoinMode = Enum.LineJoinMode.Miter,
+            Name = "UIStrokeBackSlider",
+            Transparency = 0
+        })
+        
+        Library:Create("UICorner", {
+            Parent = SLIDERBACK,
+            CornerRadius = UDim.new(0, 4)
+        })
+        
+        local SLIDER = Library:Create("Frame", {
+            Parent = SLIDERBACK,
+            Size = UDim2.new(1, -80, 1, 0),
+            Name = "Slider",
+            ZIndex = 1,
+            BorderSizePixel = 0
+        })
+        
+        Library:Create("UIGradient", {
+            Parent = SLIDER,
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0.00, Library.Colors.Accent),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27, 27, 55))
+            },
+            Rotation = 90,
+        })
+        
+        local SLIDERVALUE = Library:Create("TextLabel", {
+            Size = UDim2.new(0, 20, 0, 10),
+            Parent = SLIDER,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            Position = UDim2.new(1, -10, 0, -15),
+            BackgroundTransparency = 1,
+            TextColor3 = Library.Colors.ElementInactive,
+            FontFace = Library.Font,
+            Text = math.round(options.value),
+            TextTransparency = 1,  -- Bắt đầu với trạng thái ẩn
+            TextSize = 8,
+            Name = options.name,
+            Visible = false  -- Bắt đầu với trạng thái ẩn
+        })
+        
+        Library:Create("UIStroke", {
+            Thickness = 1,
+            Color = Color3.new(0, 0, 0),
+            Parent = SLIDERVALUE
+        })
+        
+        local TEXTBOX = Library:Create("TextBox", {
+            Parent = SLIDERCONTAINER,
+            Size = UDim2.new(0, 50, 0, 14),
+            Position = UDim2.new(1, -55, 0.5, -7),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 10,
+            FontFace = Library.Font,
+            Text = tostring(options.default),
+            Name = "SliderTextBox"
+        })
+        
+        Library:Create("UICorner", {
+            Parent = TEXTBOX,
+            CornerRadius = UDim.new(0, 4)
+        })
+        
+        -- Slider methods
+        function slider:SetValue(v)
+            local slidervalue
+            if v == nil then
+                local mouseX = mouse.X
+                if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
+                    local output = (mouseX - SLIDERBACK.AbsolutePosition.X) / SLIDERBACK.AbsoluteSize.X
+                    slidervalue = math.clamp(math.round(output * (options.max - options.min) + options.min), options.min, options.max)
+                else
+                    return
+                end
+            else
+                if v and tonumber(v) then
+                    slidervalue = math.clamp(math.round(v), options.min, options.max)
+                else
+                    slidervalue = 0
+                end
+            end
+            SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
+            SLIDER:TweenSize(UDim2.fromScale((slidervalue - options.min) / (options.max - options.min), 1), Enum.EasingDirection.In, Enum.EasingStyle.Linear, 0.1, true)
+            TEXTBOX.Text = slidervalue
+            options.callback(slider:GetValue())
+        end
+                
+        function slider:GetValue()
+            local text = TEXTBOX.Text
+            if text == "" or not tonumber(text) then
+                return nil
+            end
+            return tonumber(text)
+        end
+        
+        -- Initialize slider
+        SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1)
+        SLIDERVALUE.Text = options.default .. (options.suffix or "")
+        TEXTBOX.Text = options.default
+        
+        -- Slider functionality
+        do
+            local function blockCameraInput(_, inputState)
+                if slider.Dragging then
+                    return Enum.ContextActionResult.Sink
+                end
+                return Enum.ContextActionResult.Pass
+            end
             
-    function slider:GetValue()
-        local text = TEXTBOX.Text
-        if text == "" or not tonumber(text) then
-            return nil
-        end
-        return tonumber(text)
-    end
-    
-    -- Initialize slider
-    SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1)
-    SLIDERVALUE.Text = options.default .. (options.suffix or "")
-    TEXTBOX.Text = options.default
-    
-    -- Slider functionality
-    do
-        local function blockCameraInput(_, inputState)
-            if slider.Dragging then
-                return Enum.ContextActionResult.Sink
-            end
-            return Enum.ContextActionResult.Pass
+            -- Thêm biến để theo dõi trạng thái cuộn
+            local originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
+            
+            Library:connection(SLIDERBACK.MouseEnter, function()
+                slider.Hover = true
+                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
+            end)
+        
+            Library:connection(SLIDERBACK.MouseLeave, function()
+                slider.Hover = false
+                if not slider.Dragging then
+                    Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+                end
+            end)
+        
+            Library:connection(SLIDERBACK.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    slider.Dragging = true
+                    _G.isDraggingSlider = true
+                    
+                    -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
+                    originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
+                    ELEMENTCONTAINER.ScrollingEnabled = false
+                    
+                    uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+                    cas:BindAction("BlockCamera", blockCameraInput, false, Enum.UserInputType.MouseMovement)
+                    Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
+                    
+                    -- Hiển thị text khi kéo
+                    SLIDERVALUE.Visible = true
+                    SLIDERVALUE.TextTransparency = 0  -- Đặt trực tiếp thay vì tween
+                    SLIDERVALUE.TextColor3 = Library.Colors.Accent
+                    
+                    slider:SetValue()
+                end
+            end)
+        
+            Library:connection(SLIDERBACK.InputChanged, function(input)
+                if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    slider:SetValue()
+                end
+            end)
+        
+            Library:connection(_uis.InputEnded, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
+                    slider.Dragging = false
+                    _G.isDraggingSlider = false
+                    
+                    -- Khôi phục trạng thái cuộn ban đầu
+                    ELEMENTCONTAINER.ScrollingEnabled = originalScrollingEnabled
+                    
+                    uis.MouseBehavior = Enum.MouseBehavior.Default
+                    cas:UnbindAction("BlockCamera")
+                    Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
+                    
+                    -- Ẩn text khi ngừng kéo thay vì xóa nó
+                    Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
+                        SLIDERVALUE.Visible = false
+                    end)
+                    
+                    Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+                end
+            end)
+        
+            Library:connection(TEXTBOX.FocusLost, function(enterPressed)
+                if enterPressed then
+                    slider:SetValue(TEXTBOX.Text)
+                end
+            end)
+        
+            Library:connection(TEXTBOX.MouseEnter, function()
+                Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
+            end)
+        
+            Library:connection(TEXTBOX.MouseLeave, function()
+                Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
+            end)
         end
         
-        -- Thêm biến để theo dõi trạng thái cuộn
-        local originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
+        options.callback(slider:GetValue())
         
-        Library:connection(SLIDERBACK.MouseEnter, function()
-            slider.Hover = true
-            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
-        end)
+        return slider 
+    end 
     
-        Library:connection(SLIDERBACK.MouseLeave, function()
-            slider.Hover = false
-            if not slider.Dragging then
-                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-            end
-        end)
-    
-        Library:connection(SLIDERBACK.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                slider.Dragging = true
-                _G.isDraggingSlider = true
-                
-                -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
-                originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
-                ELEMENTCONTAINER.ScrollingEnabled = false
-                
-                uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-                cas:BindAction("BlockCamera", blockCameraInput, false, Enum.UserInputType.MouseMovement)
-                Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
-                
-                -- Hiển thị text khi kéo
-                SLIDERVALUE.Visible = true
-                SLIDERVALUE.TextTransparency = 0  -- Đặt trực tiếp thay vì tween
-                SLIDERVALUE.TextColor3 = Library.Colors.Accent
-                
-                slider:SetValue()
-            end
-        end)
-    
-        Library:connection(SLIDERBACK.InputChanged, function(input)
-            if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                slider:SetValue()
-            end
-        end)
-    
-        Library:connection(_uis.InputEnded, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
-                slider.Dragging = false
-                _G.isDraggingSlider = false
-                
-                -- Khôi phục trạng thái cuộn ban đầu
-                ELEMENTCONTAINER.ScrollingEnabled = originalScrollingEnabled
-                
-                uis.MouseBehavior = Enum.MouseBehavior.Default
-                cas:UnbindAction("BlockCamera")
-                Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
-                
-                -- Ẩn text khi ngừng kéo thay vì xóa nó
-                Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
-                    SLIDERVALUE.Visible = false
-                end)
-                
-                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-            end
-        end)
-    
-        Library:connection(TEXTBOX.FocusLost, function(enterPressed)
-            if enterPressed then
-                slider:SetValue(TEXTBOX.Text)
-            end
-        end)
-    
-        Library:connection(TEXTBOX.MouseEnter, function()
-            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
-        end)
-    
-        Library:connection(TEXTBOX.MouseLeave, function()
-            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
-        end)
-    end
-    
-    options.callback(slider:GetValue())
-    
-    return slider 
-end
     -- Dropdown element
     function section:AddDropdown(options)
         options = Library:validate({
