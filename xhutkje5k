@@ -2017,7 +2017,7 @@ function section:AddSlider(options)
                 
                 -- Ẩn text hoàn toàn khi ngừng kéo
                 Library:tween(SLIDERVALUE, {TextTransparency = 1})
-                game:GetService("Debris"):AddItem(SLIDERVALUE, 0) -- Xóa sau khi animation hoàn thành
+                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
