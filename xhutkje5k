@@ -1,4 +1,56 @@
+local window = loadstring(game:HttpGet('https://raw.githubusercontent.com/MMpokkiebokk/ki/refs/heads/main/xhutkje5k'))()
+------------------------------------------------------------
+do
+--------------
+local Desync = window:AddTab({name = "Desync"})
+Desync:AddTab({name = "CFrame"})
+local section1 = Desync:AddSection({tab = "CFrame",name = "misc",height = "fill"})
+local toggle2 = section1:AddToggle({name = "Enabled",default = false,risky = false,callback = function(a) DesyncCF.Enabled  = a end})
+section1:AddDropdown({name = "Desyncmethood", list = {
+    "DeathNote",
+    "OneTwo",
+    "Light",
+    "MSqq",
+    "Zigzag",
+    "Circle",
+    "Spiral",
+    "Figure8",
+    "Bounce",
+    "Random",
+    "Wave",
+    "Shake",
+    "Orbit",
+    "Helix",
+    "Tornado"
+},multi = false,max = 3,default = DesyncCF.Methood,callback = function(a) DesyncCF.Methood  = a end})
+section1:AddSlider({name = "Batch Size(CFrame Speed)",min = 1,max = 19,default = DesyncCF.BatchSize,callback = function(a) DesyncCF.BatchSize = a end})
+Desync:AddTab({name = "Settings"})
+local section2 = Desync:AddSection({tab = "Settings",name = "CFrameSettings",height = "fill"})
+local section3 = Desync:AddSection({tab = "Settings",name = "test11",height = "fill"})
+section2:AddSlider({name = "MSqq Distance",min = 1,max = 2147483647,default = MSqqDi,callback = function(a) MSqqDi = a end})
+section2:AddSlider({name = "Zigzag Amplitude",min = 1,max = 2147483647,default = ZigzagAmp,callback = function(a) ZigzagAmp = a end})
+section2:AddSlider({name = "Zigzag Speed",min = 1,max = 2147483647,default = ZigzagSpeed,callback = function(a) ZigzagSpeed = a end})
+section2:AddSlider({name = "Circle Radius",min = 1,max = 2147483647,default = CircleRadius,callback = function(a) CircleRadius = a end})
+section2:AddSlider({name = "Circle Speed",min = 1,max = 2147483647,default = CircleSpeed,callback = function(a) CircleSpeed = a end})
+section2:AddSlider({name = "Spiral Radius",min = 1,max = 2147483647,default = SpiralRadius,callback = function(a) SpiralRadius = a end})
+section2:AddSlider({name = "Spiral Speed",min = 1,max = 2147483647,default = SpiralSpeed,callback = function(a) SpiralSpeed = a end})
+section2:AddSlider({name = "Spiral Height",min = 1,max = 2147483647,default = SpiralHeight,callback = function(a) SpiralHeight = a end})
+section2:AddSlider({name = "Figure8 Size",min = 1,max = 2147483647,default = Figure8Size,callback = function(a) Figure8Size = a end})
+section2:AddSlider({name = "Figure8 Speed",min = 1,max = 2147483647,default = Figure8Speed,callback = function(a) Figure8Speed = a end})
+section2:AddSlider({name = "Bounce Height",min = 1,max = 2147483647,default = BounceHeight,callback = function(a) BounceHeight = a end})
+section2:AddSlider({name = "Bounce Speed",min = 1,max = 2147483647,default = BounceSpeed,callback = function(a) BounceSpeed = a end})
+section2:AddSlider({name = "Random Range",min = 1,max = 2147483647,default = RandomRange,callback = function(a) RandomRange = a end})
+section2:AddSlider({name = "Random Speed",min = 1,max = 2147483647,default = RandomSpeed,callback = function(a) RandomSpeed = a end})
+section2:AddSlider({name = "Wave Amplitude",min = 1,max = 2147483647,default = WaveAmp,callback = function(a) WaveAmp = a end})
+section2:AddSlider({name = "Wave Frequency",min = 1,max = 2147483647,default = WaveFreq,callback = function(a) WaveFreq = a end})
+section2:AddSlider({name = "Wave Speed",min = 1,max = 10,default = WaveSpeed,callback = function(a) WaveSpeed = a end})
+section2:AddSlider({name = "Shake Intensity",min = 1,max = 2147483647,default = ShakeIntensity,callback = function(a) ShakeIntensity = a end})
+section2:AddSlider({name = "Shake Speed",min = 1,max = 2147483647,default = ShakeSpeed,callback = function(a) ShakeSpeed = a end})
 
+section3:AddSlider({name = "MSqq Distance",min = 1,max = 2147483647,default = MSqqDi,callback = function(a) MSqqDi = a end})
+end
+giúp tôi fix với khi tôi thêm section 3 nó sẽ ở dưới section 2 nhưng nó lại bị tràn viền  và khi tôi thử lướt xuống để xem section 2 thì ko được hãy xem đoạn code này và làm cách nào đó để fix
+đoạn code :
 game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
@@ -849,23 +901,28 @@ function tab:AddSection(options)
     end)
     
     -- THAY ĐỔI QUAN TRỌNG: Chuyển từ Frame sang ScrollingFrame để có thể cuộn
-    local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
-        Parent = SECTION,
-        Size = UDim2.new(1, 0, 1, -10),
-        Position = UDim2.new(0, 0, 0, 10),
-        BackgroundTransparency = 1,
-        Name = "ElementContainer",
-        CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
-        ScrollBarThickness = 4, -- Hiển thị thanh cuộn
-        ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
-        BorderSizePixel = 0,
-    })
-    Library:Create("UIListLayout", { 
-        Parent = ELEMENTCONTAINER,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-        Name = "ElementLayout"
-    })
+-- Trong phần AddSection, đảm bảo ScrollingFrame được thiết lập như sau:
+local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = SECTION,
+    Size = UDim2.new(1, 0, 1, -10),
+    Position = UDim2.new(0, 0, 0, 10),
+    BackgroundTransparency = 1,
+    Name = "ElementContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
+    ScrollBarThickness = 4, -- Hiển thị thanh cuộn
+    ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
+    BorderSizePixel = 0,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Thêm dòng này
+})
+Library:Create("UIListLayout", { 
+    Parent = ELEMENTCONTAINER,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Padding = UDim.new(0, 8),
+    Name = "ElementLayout",
+    FillDirection = Enum.FillDirection.Vertical,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+})
     
     -- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
     local function updateCanvasSize()
@@ -892,13 +949,17 @@ function tab:AddSection(options)
         PaddingBottom = UDim.new(0,5),
     })
     
-    -- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
-    Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
-        if child:IsA("GuiObject") then
-            updateCanvasSize()
-        end
-    end)
-    
+-- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
+Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
+    if child:IsA("GuiObject") then
+        updateCanvasSize()
+    end
+end)
+
+-- Thêm sự kiện này để theo dõi khi kích thước thay đổi
+Library:connection(ELEMENTCONTAINER:GetPropertyChangedSignal("AbsoluteCanvasSize"), function()
+    updateCanvasSize()
+end)
     local pos = SECTION.Position.Y.Offset
     if options.height == "fill" then
         SECTION.Size = UDim2.new(1,0,1,-pos)
@@ -2018,27 +2079,28 @@ function section:AddSlider(options)
             end
         end)
     
-        Library:connection(_uis.InputEnded, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
-                slider.Dragging = false
-                _G.isDraggingSlider = false
-                
-                -- Khôi phục cuộn khi kết thúc kéo slider
-                enableScrolling()
-                
-                -- Hủy chặn sự kiện cuộn chuột
-                cas:UnbindAction("BlockScroll_" .. options.name)
-                
-                uis.MouseBehavior = Enum.MouseBehavior.Default
-                Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
-                
-                -- Ẩn text hoàn toàn khi ngừng kéo
-                Library:tween(SLIDERVALUE, {TextTransparency = 1})
-                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
-                
-                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-            end
-        end)
+       -- Thay thế đoạn mã này:
+       Library:connection(_uis.InputEnded, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
+            slider.Dragging = false
+            _G.isDraggingSlider = false
+            
+            -- Khôi phục cuộn khi kết thúc kéo slider
+            enableScrolling()
+            
+            -- Hủy chặn sự kiện cuộn chuột
+            cas:UnbindAction("BlockScroll_" .. options.name)
+            
+            uis.MouseBehavior = Enum.MouseBehavior.Default
+            Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
+            
+            -- Chỉ ẩn text thay vì xóa nó
+            Library:tween(SLIDERVALUE, {TextTransparency = 1})
+            -- Không sử dụng Debris:AddItem nữa
+            
+            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+        end
+    end)
     
         Library:connection(TEXTBOX.FocusLost, function(enterPressed)
             if enterPressed then
