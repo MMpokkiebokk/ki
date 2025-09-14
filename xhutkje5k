@@ -1985,50 +1985,50 @@ function section:AddSlider(options)
         return Enum.ContextActionResult.Pass
     end
     
-    -- Slider functionality
-    do
-        Library:connection(SLIDERBACK.MouseEnter, function()
-            slider.Hover = true
-            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
-        end)
-    
-        Library:connection(SLIDERBACK.MouseLeave, function()
-            slider.Hover = false
-            if not slider.Dragging then
-                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
-            end
-        end)
-    
-        Library:connection(SLIDERBACK.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                slider.Dragging = true
-                _G.isDraggingSlider = true
-                
-                -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
-                disableScrolling()
-                
-                -- Chặn sự kiện cuộn chuột
-                cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
-                
-                uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-                Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
-                
-                -- Hiển thị text khi kéo
-                SLIDERVALUE.Visible = true
-                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
-                
-                slider:SetValue()
-            end
-        end)
-    
-        Library:connection(SLIDERBACK.InputChanged, function(input)
-            if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                slider:SetValue()
-            end
-        end)
-    
-       -- Thay thế đoạn mã này:
-       Library:connection(_uis.InputEnded, function(input)
+-- Slider functionality
+do
+    Library:connection(SLIDERBACK.MouseEnter, function()
+        slider.Hover = true
+        Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
+    end)
+
+    Library:connection(SLIDERBACK.MouseLeave, function()
+        slider.Hover = false
+        if not slider.Dragging then
+            Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+        end
+    end)
+
+    Library:connection(SLIDERBACK.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            slider.Dragging = true
+            _G.isDraggingSlider = true
+            
+            -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
+            disableScrolling()
+            
+            -- Chặn sự kiện cuộn chuột
+            cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
+            
+            uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+            Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
+            
+            -- Hiển thị text khi kéo
+            SLIDERVALUE.Visible = true
+            SLIDERVALUE.TextTransparency = 0
+            SLIDERVALUE.TextColor3 = Library.Colors.Accent
+            
+            slider:SetValue()
+        end
+    end)
+
+    Library:connection(SLIDERBACK.InputChanged, function(input)
+        if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            slider:SetValue()
+        end
+    end)
+
+    Library:connection(_uis.InputEnded, function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
             slider.Dragging = false
             _G.isDraggingSlider = false
@@ -2042,28 +2042,30 @@ function section:AddSlider(options)
             uis.MouseBehavior = Enum.MouseBehavior.Default
             Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
             
-            -- Chỉ ẩn text thay vì xóa nó
-            Library:tween(SLIDERVALUE, {TextTransparency = 1})
-            -- Không sử dụng Debris:AddItem nữa
+            -- Ẩn text và khôi phục màu sắc ban đầu
+            Library:tween(SLIDERVALUE, {
+                TextTransparency = 1,
+                TextColor3 = Library.Colors.ElementInactive
+            })
             
             Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
         end
     end)
-    
-        Library:connection(TEXTBOX.FocusLost, function(enterPressed)
-            if enterPressed then
-                slider:SetValue(TEXTBOX.Text)
-            end
-        end)
-    
-        Library:connection(TEXTBOX.MouseEnter, function()
-            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
-        end)
-    
-        Library:connection(TEXTBOX.MouseLeave, function()
-            Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
-        end)
-    end
+
+    Library:connection(TEXTBOX.FocusLost, function(enterPressed)
+        if enterPressed then
+            slider:SetValue(TEXTBOX.Text)
+        end
+    end)
+
+    Library:connection(TEXTBOX.MouseEnter, function()
+        Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.Accent})
+    end)
+
+    Library:connection(TEXTBOX.MouseLeave, function()
+        Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
+    end)
+end
     
     options.callback(slider:GetValue())
     
