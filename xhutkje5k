@@ -1882,21 +1882,19 @@ function section:AddSlider(options)
         Rotation = 90,
     })
     
-    -- Tạo một TextLabel riêng để hiển thị giá trị khi kéo
+    -- Tạo một TextLabel để hiển thị giá trị khi kéo
     local SLIDERVALUE = Library:Create("TextLabel", {
-        Size = UDim2.new(0, 40, 0, 16),
-        Parent = SLIDERBACK,
+        Size = UDim2.new(0, 30, 0, 10),
+        Parent = SLIDER,
         TextXAlignment = Enum.TextXAlignment.Center,
-        Position = UDim2.new(0.5, 0, 0, -20),
-        AnchorPoint = Vector2.new(0.5, 1),
-        BackgroundColor3 = Library.Colors.Window,
-        BorderColor3 = Library.Colors.BorderColor,
-        TextColor3 = Library.Colors.Accent,
+        Position = UDim2.new(1, -10, 0, -15),
+        BackgroundTransparency = 1,
+        TextColor3 = Library.Colors.ElementInactive,
         FontFace = Library.Font,
         Text = tostring(options.default),
-        TextSize = 9,
+        TextTransparency = 1, -- Bắt đầu ẩn
+        TextSize = 8,
         Name = "SliderValue",
-        Visible = false, -- Bắt đầu ẩn
         ZIndex = 10
     })
     
@@ -1904,11 +1902,6 @@ function section:AddSlider(options)
         Thickness = 1,
         Color = Color3.new(0, 0, 0),
         Parent = SLIDERVALUE
-    })
-    
-    Library:Create("UICorner", {
-        Parent = SLIDERVALUE,
-        CornerRadius = UDim.new(0, 3)
     })
     
     local TEXTBOX = Library:Create("TextBox", {
@@ -2022,8 +2015,14 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
                 Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
                 
-                -- Hiển thị text khi kéo
-                SLIDERVALUE.Visible = true
+                -- Hiển thị text khi kéo với hiệu ứng fade in
+                SLIDERVALUE.TextTransparency = 1
+                SLIDERVALUE.TextColor3 = Library.Colors.ElementInactive
+                Library:tween(SLIDERVALUE, {
+                    TextTransparency = 0,
+                    TextColor3 = Library.Colors.Accent
+                })
+                
                 slider:SetValue()
             end
         end)
@@ -2031,6 +2030,17 @@ function section:AddSlider(options)
         Library:connection(SLIDERBACK.InputChanged, function(input)
             if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 slider:SetValue()
+                
+                -- Cập nhật vị trí của text để theo con trỏ
+                local mouseX = mouse.X
+                if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
+                    local relativeX = mouseX - SLIDERBACK.AbsolutePosition.X
+                    local sliderWidth = SLIDERBACK.AbsoluteSize.X
+                    local positionRatio = relativeX / sliderWidth
+                    
+                    -- Đặt text ở vị trí tương đối trên slider
+                    SLIDERVALUE.Position = UDim2.new(positionRatio, 0, 0, -15)
+                end
             end
         end)
     
@@ -2048,8 +2058,11 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.Default
                 Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Ẩn text hoàn toàn khi ngừng kéo
-                SLIDERVALUE.Visible = false
+                -- Ẩn text với hiệu ứng fade out và khôi phục màu sắc ban đầu
+                Library:tween(SLIDERVALUE, {
+                    TextTransparency = 1,
+                    TextColor3 = Library.Colors.ElementInactive
+                })
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
