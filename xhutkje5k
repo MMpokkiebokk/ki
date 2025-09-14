@@ -1,10 +1,10 @@
-
 game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
 local ab = {}
+
 local Library = {
     Ui_Bind = Enum.KeyCode.RightShift,
     Colors = {
@@ -28,6 +28,7 @@ local Library = {
     Connections = {},
     Font = nil,
 }
+
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
     if not isfile(Asset.Id) then writefile(Asset.Id, Asset.Font) end
@@ -46,6 +47,7 @@ function Library:Register_Font(Name, Weight, Style, Asset)
     writefile(Name .. ".font", _http:JSONEncode(Data))
     return getcustomasset(Name .. ".font")
 end
+
 -- Helper functions
 function Library:Create(Class, Properties, Secure)
     local _Instance
@@ -60,6 +62,7 @@ function Library:Create(Class, Properties, Secure)
     table.insert(self.Instances, _Instance)
     return _Instance
 end
+
 function Library:validate(defaults, options)
     for i,v in pairs(defaults) do
         if options[i] == nil then
@@ -68,12 +71,14 @@ function Library:validate(defaults, options)
     end
     return options
 end
+
 function Library:connection(signal, callback, tbl)
     local connection = signal:Connect(callback)
     table.insert(self.Connections, connection)
     if tbl then table.insert(tbl, connection) end
     return connection
 end
+
 function Library:unload()
     for _,v in next, self.Instances do 
         if v and v.Parent then 
@@ -86,6 +91,7 @@ function Library:unload()
         end 
     end
 end
+
 function Library:tween(object, goal, callback)
     local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
     if callback then
@@ -93,6 +99,7 @@ function Library:tween(object, goal, callback)
     end
     tween:Play()
 end
+
 function lerp(startValue, endValue, duration, callback)
     local startTime = tick()
     local completed = false
@@ -114,12 +121,14 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
+
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
 local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local gameName = productInfo.Name
 local dropdownindex = 50
+
 ab.AddWindow = function (options)
     local options = options or {}
     options = Library:validate({
@@ -140,6 +149,7 @@ ab.AddWindow = function (options)
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
+
     -- Watermark setup
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
@@ -504,13 +514,21 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        local LEFTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "LeftContainer"
-        })
+       -- Thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER trong hàm tab:AddTab
+local LEFTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "LeftContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollBarImageTransparency = 0.3,
+})
+
+ 
         
         Library:Create("UIPadding", {
             Parent = LEFTCONTAINER,
@@ -519,16 +537,20 @@ ab.AddWindow = function (options)
             PaddingLeft = UDim.new(0,10),
         })
         
-        local RIGHTCONTAINER = Library:Create("Frame", {
+        local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, 0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Name = "RightContainer"
+            Name = "RightContainer",
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 4,
+            ScrollBarImageColor3 = Library.Colors.Accent,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ScrollBarImageTransparency = 0.3,
         })
-        
         Library:Create("UIPadding", {
             Parent = RIGHTCONTAINER,
             PaddingTop = UDim.new(0,10),
@@ -791,6 +813,7 @@ function tab:AddSection(options)
     
     local section = { Hover = false, }
     local NewPos
+
     -- Calculate Section Position
     if options.side == "Left" then
         if getgenv().subtab then
@@ -823,6 +846,7 @@ function tab:AddSection(options)
             end
         end
     end
+
     local SECTION = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0, options.height),
         AnchorPoint = Vector2.new(0, 0),
@@ -831,6 +855,7 @@ function tab:AddSection(options)
         BorderSizePixel = 0,
         Name = options.name
     })
+
     local SECTIONTEXT = Library:Create("TextLabel", {
         Parent = SECTION,
         AnchorPoint = Vector2.new(0.5,0),
@@ -860,6 +885,7 @@ function tab:AddSection(options)
         ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
         BorderSizePixel = 0,
     })
+
     Library:Create("UIListLayout", { 
         Parent = ELEMENTCONTAINER,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -905,6 +931,7 @@ function tab:AddSection(options)
     elseif options.height == "half" then
         SECTION.Size = UDim2.new(1,0,0.5,-pos/2)
     end
+
     -- Handle side picking
     do
         if getgenv().subtab and options.side == "Right" then
@@ -924,6 +951,7 @@ function tab:AddSection(options)
             table.insert(LeftHeight, SECTION.AbsoluteSize.Y)
         end
     end
+
     Library:Create("UIStroke", { 
         Parent = SECTION,
         Color = Library.Colors.BorderColor
@@ -2396,6 +2424,7 @@ end
         Library:connection(CHOICEHOLDER.MouseEnter, function()
             List.MouseInside = true
         end)
+
         Library:connection(CHOICEHOLDER.MouseLeave, function()
             List.MouseInside = false
         end)
@@ -2565,4 +2594,5 @@ end
     
     return menu
 end 
+
 return ab.AddWindow()
