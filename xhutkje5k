@@ -2005,6 +2005,7 @@ function section:AddSlider(options)
                 
                 -- Hiển thị text khi kéo
                 SLIDERVALUE.Visible = true
+                SLIDERVALUE.TextTransparency = 0
                 Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
                 
                 slider:SetValue()
@@ -2017,25 +2018,26 @@ function section:AddSlider(options)
             end
         end)
     
-        Library:connection(_uis.InputEnded, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and slider.Dragging then
-                slider.Dragging = false
-                _G.isDraggingSlider = false
+        Library:connection(SLIDERBACK.InputBegan, function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                slider.Dragging = true
+                _G.isDraggingSlider = true
                 
-                -- Khôi phục cuộn khi kết thúc kéo slider
-                enableScrolling()
+                -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
+                disableScrolling()
                 
-                -- Hủy chặn sự kiện cuộn chuột
-                cas:UnbindAction("BlockScroll_" .. options.name)
+                -- Chặn sự kiện cuộn chuột
+                cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
                 
-                uis.MouseBehavior = Enum.MouseBehavior.Default
-                Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
+                uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+                Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
                 
-                -- Ẩn text hoàn toàn khi ngừng kéo
-                Library:tween(SLIDERVALUE, {TextTransparency = 1})
-                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
+                -- Hiển thị text khi kéo
+                SLIDERVALUE.Visible = true
+                SLIDERVALUE.TextTransparency = 0
+                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
                 
-                Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
+                slider:SetValue()
             end
         end)
     
