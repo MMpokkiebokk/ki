@@ -791,7 +791,6 @@ ab.AddWindow = function (options)
         end
         
 -- Thay đổi phần AddSection trong function tab:AddSection
--- Thay đổi phần AddSection trong function tab:AddSection
 function tab:AddSection(options)
     options = Library:validate({
         tab = nil,
@@ -1779,7 +1778,11 @@ function tab:AddSection(options)
         return toggle
     end
     
-  -- Thay đổi phần AddSlider trong function section:AddSlider
+    -- Slider element
+   -- Thay đổi phần AddSlider trong function section:AddSlider
+
+-- Slider element
+-- Thay đổi phần AddSlider trong function section:AddSlider
 
 -- Slider element
 function section:AddSlider(options)
@@ -2044,7 +2047,6 @@ function section:AddSlider(options)
     
     return slider 
 end
-    
     -- Dropdown element
     function section:AddDropdown(options)
         options = Library:validate({
