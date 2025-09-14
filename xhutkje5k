@@ -1782,6 +1782,9 @@ function tab:AddSection(options)
    -- Thay đổi phần AddSlider trong function section:AddSlider
 
 -- Slider element
+-- Thay đổi phần AddSlider trong function section:AddSlider
+
+-- Slider element
 function section:AddSlider(options)
     options = Library:validate({
         name = "example slider",
@@ -1991,7 +1994,8 @@ function section:AddSlider(options)
                 
                 -- Hiển thị text khi kéo
                 SLIDERVALUE.Visible = true
-                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
+                SLIDERVALUE.TextTransparency = 0  -- Đặt trực tiếp thay vì tween
+                SLIDERVALUE.TextColor3 = Library.Colors.Accent
                 
                 slider:SetValue()
             end
@@ -2015,9 +2019,10 @@ function section:AddSlider(options)
                 cas:UnbindAction("BlockCamera")
                 Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Ẩn text hoàn toàn khi ngừng kéo
-                Library:tween(SLIDERVALUE, {TextTransparency = 1})
-                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
+                -- Ẩn text khi ngừng kéo thay vì xóa nó
+                Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
+                    SLIDERVALUE.Visible = false
+                end)
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
@@ -2042,7 +2047,6 @@ function section:AddSlider(options)
     
     return slider 
 end
-    
     -- Dropdown element
     function section:AddDropdown(options)
         options = Library:validate({
