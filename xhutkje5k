@@ -514,13 +514,21 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        local LEFTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "LeftContainer"
-        })
+       -- Thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER trong hàm tab:AddTab
+local LEFTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "LeftContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollBarImageTransparency = 0.3,
+})
+
+ 
         
         Library:Create("UIPadding", {
             Parent = LEFTCONTAINER,
@@ -529,16 +537,20 @@ ab.AddWindow = function (options)
             PaddingLeft = UDim.new(0,10),
         })
         
-        local RIGHTCONTAINER = Library:Create("Frame", {
+        local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, 0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Name = "RightContainer"
+            Name = "RightContainer",
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 4,
+            ScrollBarImageColor3 = Library.Colors.Accent,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ScrollBarImageTransparency = 0.3,
         })
-        
         Library:Create("UIPadding", {
             Parent = RIGHTCONTAINER,
             PaddingTop = UDim.new(0,10),
