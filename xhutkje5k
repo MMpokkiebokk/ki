@@ -4,7 +4,6 @@ local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
 local ab = {}
-
 local Library = {
     Ui_Bind = Enum.KeyCode.RightShift,
     Colors = {
@@ -28,6 +27,48 @@ local Library = {
     Connections = {},
     Font = nil,
 }
+
+-- Thêm hàm để tính toán kích thước dựa trên viewport
+local ViewportService = game:GetService("ViewportFrameService")
+local Camera = game:GetService("Workspace").CurrentCamera
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hàm để lấy kích thước viewport
+local function getViewportSize()
+    return Camera.ViewportSize
+end
+
+-- Hàm để tính toán kích thước UI dựa trên viewport
+local function calculateUISize()
+    local viewportSize = getViewportSize()
+    local baseWidth = 3 
+    local baseHeight = 3
+    
+    -- Tính toán tỷ lệ
+    local widthScale = viewportSize.X / baseWidth
+    local heightScale = viewportSize.Y / baseHeight
+    
+    -- Sử dụng tỷ lệ nhỏ hơn để đảm bảo UI không bị méo
+    local scale = math.min(widthScale, heightScale)
+    
+    -- Giới hạn tỷ lệ tối thiểu và tối đa
+    scale = math.max(0.7, math.min(scale, 1.5))
+    
+    return scale
+end
+
+-- Hàm để tính toán kích thước font dựa trên viewport
+local function calculateFontSize(baseSize)
+    local scale = calculateUISize()
+    return math.max(8, math.floor(baseSize * scale))
+end
+
+-- Hàm để tính toán kích thước phần tử dựa trên viewport
+local function calculateElementSize(baseSize)
+    local scale = calculateUISize()
+    return baseSize * scale
+end
 
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
@@ -129,14 +170,20 @@ local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local gameName = productInfo.Name
 local dropdownindex = 50
 
+-- Biến để lưu trữ kích thước UI
+local uiScale = calculateUISize()
+local baseFontSize = 9
+local baseElementSize = 15
+
 ab.AddWindow = function (options)
     local options = options or {}
     options = Library:validate({
         name = string.format('<font color="rgb(%d, %d, %d)">Funny.KM</font> | @Kdyriz', Library.Colors.Accent.R * 255, Library.Colors.Accent.G * 255, Library.Colors.Accent.B * 255),
-        size = UDim2.new(0, 625, 0, 400),
+        -- Sử dụng kích thước tương đối thay vì cố định
+        size = UDim2.new(0, calculateElementSize(625), 0, calculateElementSize(400)),
         WaterMark = {
             Enabled = true, 
-            TextSize = 9,
+            TextSize = calculateFontSize(9),
             TextTransparency = 0,
             TextStrokeTransparency = 0,
         },
@@ -149,7 +196,7 @@ ab.AddWindow = function (options)
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
-
+    
     -- Watermark setup
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
@@ -193,11 +240,18 @@ ab.AddWindow = function (options)
         Parent = SCREENGUI,
         Size = options.size,
         AnchorPoint = Vector2.new("0.5","0.5"),
-        Position = UDim2.new(0.5, -100, 0.5, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
         BackgroundColor3 = Library.Colors.Window,
         BorderSizePixel = 0,
         Name = "Window",
         ZIndex = -2,
+    })
+    
+    -- Thêm UIAspectRatioConstraint để giữ tỷ lệ khung hình
+    local ASPECT_RATIO = Library:Create("UIAspectRatioConstraint", {
+        Parent = WINDOW,
+        AspectRatio = 625/400,
+        DominantAxis = Enum.DominantAxis.Height,
     })
     
     local originalBorderColor = Library.Colors.BorderColor
@@ -255,7 +309,7 @@ ab.AddWindow = function (options)
         Parent = WINDOW,
         BackgroundColor3 = Library.Colors.TopBar,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, -6, 0, 18),
+        Size = UDim2.new(1, -6, 0, calculateElementSize(18)), -- Tự động điều chỉnh
         Position = UDim2.new(0,3,0,3),
         Name = "Topbar"
     })
@@ -295,7 +349,7 @@ ab.AddWindow = function (options)
         Position = UDim2.new(0,6,0,0),
         TextColor3 = Library.Colors.TopText,
         BorderSizePixel = 0,
-        TextSize = 9,
+        TextSize = calculateFontSize(9), -- Tự động điều chỉnh
         RichText = true,
         Text = options.name,
         FontFace = Library.Font,
@@ -310,7 +364,7 @@ ab.AddWindow = function (options)
         AnchorPoint = Vector2.new(1,0.5),
         TextColor3 = Library.Colors.TopText,
         BorderSizePixel = 0,
-        TextSize = 9,
+        TextSize = calculateFontSize(9), -- Tự động điều chỉnh
         RichText = true,
         Text = string.lower(os.date("%A, %d %B, %y")),
         FontFace = Library.Font,
@@ -322,7 +376,7 @@ ab.AddWindow = function (options)
     local TABCONTAINER = Library:Create("Frame", {
         Parent = WINDOW,
         BackgroundTransparency = 1,
-        Size = UDim2.new(0,120,1,-35),
+        Size = UDim2.new(0, calculateElementSize(120), 1, -35), -- Tự động điều chỉnh
         Position = UDim2.new(0,10,0.5,10),
         AnchorPoint = Vector2.new(0,0.5),
         Name = "TabContainer"
@@ -342,7 +396,7 @@ ab.AddWindow = function (options)
         FillDirection = Enum.FillDirection.Vertical,
         HorizontalAlignment = Enum.HorizontalAlignment.Center,
         VerticalAlignment = Enum.VerticalAlignment.Top,
-        Padding = UDim.new(0, 8),
+        Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
     })
     
     Library:Create("UIStroke", { 
@@ -353,8 +407,8 @@ ab.AddWindow = function (options)
     -- Inner container setup
     local INNERCONTAINER = Library:Create("Frame", {
         Parent = WINDOW,
-        Size = UDim2.new(1, -150, 1, -35),
-        Position = UDim2.new(0, 140, 0, 28),
+        Size = UDim2.new(1, -calculateElementSize(150), 1, -35), -- Tự động điều chỉnh
+        Position = UDim2.new(0, calculateElementSize(140), 0, 28), -- Tự động điều chỉnh
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Name = "InnerContainer",
@@ -373,8 +427,8 @@ ab.AddWindow = function (options)
                 content.Visible = false
             end
         end
-        Library:tween(tab.TabText, {Position = UDim2.new(0,12,0.5,0),})
-        Library:tween(tab.TabBar, {Position = UDim2.new(0,0,0.5,0),})
+        Library:tween(tab.TabText, {Position = UDim2.new(0,12,0.5,0)})
+        Library:tween(tab.TabBar, {Position = UDim2.new(0,0,0.5,0)})
         Library:tween(tab.TabOverlay, {Position = UDim2.new(0,0,0,0)})
         Library:tween(tab.TabText, {TextColor3 = Library.Colors.TabInactive})
         Library:tween(tab.TabOverlay, {BackgroundTransparency = 1})
@@ -458,7 +512,7 @@ ab.AddWindow = function (options)
         local TAB = Library:Create("Frame", {
             Parent = TABCONTAINER,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1,0,0,15),
+            Size = UDim2.new(1,0,0,calculateElementSize(15)), -- Tự động điều chỉnh
             Name = options.name
         })
         
@@ -496,7 +550,7 @@ ab.AddWindow = function (options)
             AnchorPoint = Vector2.new(0,0.5),
             TextColor3 = Library.Colors.TabInactive,
             FontFace = Library.Font,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             TextXAlignment = Enum.TextXAlignment.Left,
             Text = options.name,
             Name = "TabText"
@@ -515,65 +569,59 @@ ab.AddWindow = function (options)
         })
         
        -- Trong hàm tab:AddTab, thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER
--- Trong hàm tab:AddTab, thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER
 local LEFTCONTAINER = Library:Create("ScrollingFrame", {
     Parent = CONTENTCONTAINER,
-    Size = UDim2.new(0.5, -6, 1, 0),
+    Size = UDim2.new(0.5, -calculateElementSize(6), 1, 0), -- Tự động điều chỉnh
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
     Name = "LeftContainer",
     AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollBarThickness = 4,
+    ScrollBarThickness = calculateElementSize(4), -- Tự động điều chỉnh
     ScrollBarImageColor3 = Library.Colors.Accent,
     ScrollBarImageTransparency = 0.3,
     CanvasSize = UDim2.new(0, 0, 0, 0),
 })
-
 Library:Create("UIPadding", {
     Parent = LEFTCONTAINER,
-    PaddingTop = UDim.new(0,10),
-    PaddingBottom = UDim.new(0,10),
-    PaddingLeft = UDim.new(0,10),
+    PaddingTop = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+    PaddingBottom = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+    PaddingLeft = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
 })
-
 Library:Create("UIListLayout", { 
     Parent = LEFTCONTAINER,
     SortOrder = Enum.SortOrder.LayoutOrder,
     FillDirection = Enum.FillDirection.Vertical,
     HorizontalAlignment = Enum.HorizontalAlignment.Center,
     VerticalAlignment = Enum.VerticalAlignment.Top,
-    Padding = UDim.new(0, 8),
+    Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
 })
-
 local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
     Parent = CONTENTCONTAINER,
-    Size = UDim2.new(0.5, -6, 1, 0),
+    Size = UDim2.new(0.5, -calculateElementSize(6), 1, 0), -- Tự động điều chỉnh
     AnchorPoint = Vector2.new(1, 0),
     Position = UDim2.new(1, 0, 0, 0),
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
     Name = "RightContainer",
     AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollBarThickness = 4,
+    ScrollBarThickness = calculateElementSize(4), -- Tự động điều chỉnh
     ScrollBarImageColor3 = Library.Colors.Accent,
     ScrollBarImageTransparency = 0.3,
     CanvasSize = UDim2.new(0, 0, 0, 0),
 })
-
 Library:Create("UIPadding", {
     Parent = RIGHTCONTAINER,
-    PaddingTop = UDim.new(0,10),
-    PaddingBottom = UDim.new(0,10),
-    PaddingRight = UDim.new(0,10),
+    PaddingTop = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+    PaddingBottom = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+    PaddingRight = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
 })
-
 Library:Create("UIListLayout", { 
     Parent = RIGHTCONTAINER,
     SortOrder = Enum.SortOrder.LayoutOrder,
     FillDirection = Enum.FillDirection.Vertical,
     HorizontalAlignment = Enum.HorizontalAlignment.Center,
     VerticalAlignment = Enum.VerticalAlignment.Top,
-    Padding = UDim.new(0, 8),
+    Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
 })
         
         -- Tab functionality
@@ -581,8 +629,8 @@ Library:Create("UIListLayout", {
             CONTENTCONTAINER.Visible = true
             
             Library:tween(TABTEXT, {Position = UDim2.new(0,18,0.5,0)})
-            Library:tween(TABBAR, {Position = UDim2.new(0,6,0.5,0),})
-            Library:tween(TAB_OVERLAY, {Position = UDim2.new(0,6,0,0),})
+            Library:tween(TABBAR, {Position = UDim2.new(0,6,0.5,0)})
+            Library:tween(TAB_OVERLAY, {Position = UDim2.new(0,6,0,0)})
             Library:tween(TABTEXT, {TextColor3 = Library.Colors.TabActive})
             Library:tween(TABBAR, {BackgroundTransparency = 0})
             menu.CurrentTab = TAB
@@ -650,12 +698,12 @@ Library:Create("UIListLayout", {
             
             -- Tạo LEFTCONTAINER và RIGHTCONTAINER mới cho sub-tab
             local SUBLEFTCONTAINER = Library:Create("ScrollingFrame", {
-                Size = UDim2.new(0.5, -6, 1, 0),
+                Size = UDim2.new(0.5, -calculateElementSize(6), 1, 0), -- Tự động điều chỉnh
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Name = "LeftContainer",
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                ScrollBarThickness = 4,
+                ScrollBarThickness = calculateElementSize(4), -- Tự động điều chỉnh
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollBarImageTransparency = 0.3,
                 CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -663,9 +711,9 @@ Library:Create("UIListLayout", {
             
             Library:Create("UIPadding", {
                 Parent = SUBLEFTCONTAINER,
-                PaddingTop = UDim.new(0,10),
-                PaddingBottom = UDim.new(0,10),
-                PaddingLeft = UDim.new(0,10),
+                PaddingTop = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+                PaddingBottom = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+                PaddingLeft = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
             })
             
             Library:Create("UIListLayout", { 
@@ -674,18 +722,18 @@ Library:Create("UIListLayout", {
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Top,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
             })
             
             local SUBRIGHTCONTAINER = Library:Create("ScrollingFrame", {
-                Size = UDim2.new(0.5, -6, 1, 0),
+                Size = UDim2.new(0.5, -calculateElementSize(6), 1, 0), -- Tự động điều chỉnh
                 AnchorPoint = Vector2.new(1, 0),
                 Position = UDim2.new(1, 0, 0, 0),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Name = "RightContainer",
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                ScrollBarThickness = 4,
+                ScrollBarThickness = calculateElementSize(4), -- Tự động điều chỉnh
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollBarImageTransparency = 0.3,
                 CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -693,9 +741,9 @@ Library:Create("UIListLayout", {
             
             Library:Create("UIPadding", {
                 Parent = SUBRIGHTCONTAINER,
-                PaddingTop = UDim.new(0,10),
-                PaddingBottom = UDim.new(0,10),
-                PaddingRight = UDim.new(0,10),
+                PaddingTop = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+                PaddingBottom = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
+                PaddingRight = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
             })
             
             Library:Create("UIListLayout", { 
@@ -704,7 +752,7 @@ Library:Create("UIListLayout", {
                 FillDirection = Enum.FillDirection.Vertical,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Top,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
             })
             
             -- ... phần còn lại của code ...
@@ -712,7 +760,7 @@ Library:Create("UIListLayout", {
             if not CONTENTCONTAINER:FindFirstChild("SubTabContainer") then
                 SUBTABCONTAINER = Library:Create("Frame", {
                     Parent = CONTENTCONTAINER,
-                    Size = UDim2.new(1,0,0,20),
+                    Size = UDim2.new(1,0,0,calculateElementSize(20)), -- Tự động điều chỉnh
                     Name = "SubTabContainer"
                 })
         
@@ -773,7 +821,7 @@ Library:Create("UIListLayout", {
                 BackgroundTransparency = 1,
                 TextColor3 = Library.Colors.TabInactive,
                 FontFace = Library.Font,
-                TextSize = 9,
+                TextSize = calculateFontSize(9), -- Tự động điều chỉnh
                 Size = UDim2.new(1,0,1,0),
                 Text = options.name,
                 Name = "SubTabText"
@@ -795,8 +843,8 @@ Library:Create("UIListLayout", {
                 Parent = CONTENTCONTAINER,
                 BackgroundTransparency = 1,
                 Visible = false,
-                Position = UDim2.new(0,0,0,25),
-                Size = UDim2.new(1,0,1,-25),
+                Position = UDim2.new(0,0,0,calculateElementSize(25)), -- Tự động điều chỉnh
+                Size = UDim2.new(1,0,1,-calculateElementSize(25)), -- Tự động điều chỉnh
                 Name = options.name
             })
             
@@ -872,30 +920,30 @@ Library:Create("UIListLayout", {
                 if getgenv().subtab then
                     local subtab = options.tab
                     if LeftHeight[subtab] and #LeftHeight[subtab] > 0 then
-                        NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + 10 -- Giảm khoảng cách
+                        NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + calculateElementSize(10) -- Tự động điều chỉnh
                     else
-                        NewPos = 10
+                        NewPos = calculateElementSize(10) -- Tự động điều chỉnh
                     end
                 else
                     if LeftHeight and #LeftHeight > 0 then
-                        NewPos = LeftHeight[#LeftHeight] + 10 -- Giảm khoảng cách
+                        NewPos = LeftHeight[#LeftHeight] + calculateElementSize(10) -- Tự động điều chỉnh
                     else
-                        NewPos = 10
+                        NewPos = calculateElementSize(10) -- Tự động điều chỉnh
                     end
                 end
             else
                 if getgenv().subtab then
                     local subtab = options.tab
                     if RightHeight[subtab] and #RightHeight[subtab] > 0 then
-                        NewPos = RightHeight[subtab][#RightHeight[subtab]] + 10 -- Giảm khoảng cách
+                        NewPos = RightHeight[subtab][#RightHeight[subtab]] + calculateElementSize(10) -- Tự động điều chỉnh
                     else
-                        NewPos = 10
+                        NewPos = calculateElementSize(10) -- Tự động điều chỉnh
                     end
                 else
                     if RightHeight and #RightHeight > 0 then
-                        NewPos = RightHeight[#RightHeight] + 10 -- Giảm khoảng cách
+                        NewPos = RightHeight[#RightHeight] + calculateElementSize(10) -- Tự động điều chỉnh
                     else
-                        NewPos = 10
+                        NewPos = calculateElementSize(10) -- Tự động điều chỉnh
                     end
                 end
             end
@@ -908,34 +956,35 @@ Library:Create("UIListLayout", {
                 BorderSizePixel = 0,
                 Name = options.name,
                 AutomaticSize = Enum.AutomaticSize.Y, -- Tự động điều chỉnh chiều cao
+                MinimumSize = Vector2.new(0, calculateElementSize(100)), -- Chiều cao tối thiểu tự động
             })
             
             local SECTIONTEXT = Library:Create("TextLabel", {
                 Parent = SECTION,
                 AnchorPoint = Vector2.new(0.5,0),
-                Position = UDim2.new(0.5,0,0,-6),
+                Position = UDim2.new(0.5,0,0,-calculateElementSize(6)), -- Tự động điều chỉnh
                 BackgroundColor3 = Library.Colors.Section,
                 BorderSizePixel = 0,
                 TextColor3 = Library.Colors.SectionText,
-                TextSize = 9,
+                TextSize = calculateFontSize(9), -- Tự động điều chỉnh
                 FontFace = Library.Font,
                 Text = options.name,
                 Name = "SectionText"
             })
             
             Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
-                SECTIONTEXT.Size = UDim2.new(0,SECTIONTEXT.TextBounds.X + 25,0,10) 
+                SECTIONTEXT.Size = UDim2.new(0,SECTIONTEXT.TextBounds.X + calculateElementSize(25),0,calculateElementSize(10)) -- Tự động điều chỉnh
             end)
             
             -- THÊM ELEMENTCONTAINER
             local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
                 Parent = SECTION,
-                Size = UDim2.new(1, 0, 1, -10),
-                Position = UDim2.new(0, 0, 0, 10),
+                Size = UDim2.new(1, 0, 1, -calculateElementSize(10)), -- Tự động điều chỉnh
+                Position = UDim2.new(0, 0, 0, calculateElementSize(10)), -- Tự động điều chỉnh
                 BackgroundTransparency = 1,
                 Name = "ElementContainer",
                 CanvasSize = UDim2.new(0, 0, 0, 0),
-                ScrollBarThickness = 4,
+                ScrollBarThickness = calculateElementSize(4), -- Tự động điều chỉnh
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 BorderSizePixel = 0,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -944,16 +993,16 @@ Library:Create("UIListLayout", {
             Library:Create("UIListLayout", { 
                 Parent = ELEMENTCONTAINER,
                 SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 8),
+                Padding = UDim.new(0, calculateElementSize(8)), -- Tự động điều chỉnh
                 Name = "ElementLayout"
             })
             
             Library:Create("UIPadding", { 
                 Parent = ELEMENTCONTAINER,
-                PaddingLeft = UDim.new(0,15),
-                PaddingRight = UDim.new(0,15),
-                PaddingTop = UDim.new(0,5),
-                PaddingBottom = UDim.new(0,5),
+                PaddingLeft = UDim.new(0,calculateElementSize(15)), -- Tự động điều chỉnh
+                PaddingRight = UDim.new(0,calculateElementSize(15)), -- Tự động điều chỉnh
+                PaddingTop = UDim.new(0,calculateElementSize(5)), -- Tự động điều chỉnh
+                PaddingBottom = UDim.new(0,calculateElementSize(5)), -- Tự động điều chỉnh
             })
             
             -- Cập nhật kích thước canvas của container
@@ -1020,7 +1069,7 @@ Library:Create("UIListLayout", {
         
         local BUTTONCONTAINER = Library:Create("Frame", {
             Parent = ELEMENTCONTAINER,
-            Size = UDim2.new(1, 0, 0, 15),
+            Size = UDim2.new(1, 0, 0, calculateElementSize(25)), -- Tự động điều chỉnh
             Name = options.name,
             BackgroundTransparency = 1
         })
@@ -1050,7 +1099,7 @@ Library:Create("UIListLayout", {
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundTransparency = 1,
             TextColor3 = Library.Colors.ElementInactive,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             Text = options.name,
             FontFace = Library.Font,
             TextXAlignment = Enum.TextXAlignment.Center,
@@ -1091,7 +1140,7 @@ Library:Create("UIListLayout", {
             BackgroundTransparency = 0,
             BorderSizePixel = 1,
             BorderColor3 = Library.Colors.BorderColor,
-            Size = UDim2.new(1, 0, 0, 15),
+            Size = UDim2.new(1, 0, 0, calculateElementSize(25)), -- Tự động điều chỉnh
             ZIndex = 10,
         })
         
@@ -1134,7 +1183,7 @@ Library:Create("UIListLayout", {
             FontFace = Library.Font,
             Text = options.default or "",
             TextColor3 = Library.Colors.ElementInactive,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             TextStrokeTransparency = 0,
             TextXAlignment = Enum.TextXAlignment.Center,
             ZIndex = 10
@@ -1180,7 +1229,7 @@ Library:Create("UIListLayout", {
         }
         
         local TOGGLECONTAINER = Library:Create("Frame", {
-            Size = UDim2.new(1,0,0,14),
+            Size = UDim2.new(1,0,0,calculateElementSize(25)), -- Tự động điều chỉnh
             Parent = ELEMENTCONTAINER,
             BackgroundTransparency = 1,
             Name = "ToggleContainer",
@@ -1188,7 +1237,7 @@ Library:Create("UIListLayout", {
         
         local TOGGLE = Library:Create("Frame", {
             Parent = TOGGLECONTAINER,
-            Size = UDim2.new(0,9,0,9),
+            Size = UDim2.new(0,calculateElementSize(9),0,calculateElementSize(9)), -- Tự động điều chỉnh
             BackgroundColor3 = Color3.fromRGB(20, 20, 20),
             AnchorPoint = Vector2.new(0, 0.5),
             Position = UDim2.new(0, 0, 0.5, 0),
@@ -1216,9 +1265,9 @@ Library:Create("UIListLayout", {
         local TOGGLETITLE = Library:Create("TextLabel", {
             Parent = TOGGLECONTAINER,
             AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0, 20, 0, 7),
+            Position = UDim2.new(0, calculateElementSize(20), 0, calculateElementSize(12)), -- Tự động điều chỉnh
             BackgroundTransparency = 1,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             Text = options.name,
             FontFace = Library.Font,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -1227,8 +1276,8 @@ Library:Create("UIListLayout", {
         
         local SUBELEMENTHOLDER = Library:Create("Frame", {
             Parent = TOGGLECONTAINER,
-            Size = UDim2.new(1,-5,1,0),
-            Position = UDim2.new(0,5,0,0),
+            Size = UDim2.new(1,-calculateElementSize(5),1,0), -- Tự động điều chỉnh
+            Position = UDim2.new(0,calculateElementSize(5),0,0), -- Tự động điều chỉnh
             BackgroundTransparency = 1,
             Name = "elementholder",
         })
@@ -1239,7 +1288,7 @@ Library:Create("UIListLayout", {
             FillDirection = Enum.FillDirection.Horizontal,
             HorizontalAlignment = Enum.HorizontalAlignment.Right,
             VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 10),
+            Padding = UDim.new(0, calculateElementSize(10)), -- Tự động điều chỉnh
             Name = "elementlayout",
         })
         
@@ -1307,13 +1356,13 @@ Library:Create("UIListLayout", {
         
             local KEYBINDTEXTBOX = Library:Create("TextBox", {
                 Parent = TOGGLECONTAINER,
-                Size = UDim2.new(0, 25, 0, 14),
-                Position = UDim2.new(1, -30, 0.5, -7),
+                Size = UDim2.new(0, calculateElementSize(25), 0, calculateElementSize(14)), -- Tự động điều chỉnh
+                Position = UDim2.new(1, -calculateElementSize(30), 0.5, -calculateElementSize(7)), -- Tự động điều chỉnh
                 BackgroundColor3 = Color3.fromRGB(25, 25, 25),
                 BorderColor3 = Library.Colors.BorderColor,
                 BackgroundTransparency = 1,
                 TextColor3 = Color3.fromRGB(255, 255, 255),
-                TextSize = 10,
+                TextSize = calculateFontSize(10), -- Tự động điều chỉnh
                 FontFace = Library.Font,
                 Text = keybind.Key == Enum.KeyCode.Unknown and "" or keybind.Key.Name or "nil",
                 Name = "KeybindTextBox"
@@ -1321,11 +1370,11 @@ Library:Create("UIListLayout", {
         
             local KEYBINDLABEL = Library:Create("TextLabel", {
                 Parent = TOGGLECONTAINER,
-                Size = UDim2.new(0, 25, 0, 10),
-                Position = UDim2.new(1, -25, 0, -5),
+                Size = UDim2.new(0, calculateElementSize(25), 0, calculateElementSize(10)), -- Tự động điều chỉnh
+                Position = UDim2.new(1, -calculateElementSize(25), 0, -calculateElementSize(5)), -- Tự động điều chỉnh
                 BackgroundTransparency = 1,
                 TextColor3 = Library.Colors.ElementInactive,
-                TextSize = 8,
+                TextSize = calculateFontSize(8), -- Tự động điều chỉnh
                 Text = "Keybind",
                 FontFace = Library.Font,
                 TextXAlignment = Enum.TextXAlignment.Center,
@@ -1411,7 +1460,7 @@ Library:Create("UIListLayout", {
             local ELEMENT = Library:Create("Frame", {
                 Name = "element",
                 Parent = SUBELEMENTHOLDER,
-                Size = UDim2.new(0, 22, 0, 12),
+                Size = UDim2.new(0, calculateElementSize(22), 0, calculateElementSize(12)), -- Tự động điều chỉnh
                 BorderColor3 = Library.Colors.BorderColor,
                 BorderSizePixel = 1,
             })
@@ -1429,10 +1478,10 @@ Library:Create("UIListLayout", {
             local COLORPICKER = Library:Create("Frame", {
                 Name = "colorpicker",
                 Parent = TOGGLECONTAINER,
-                Size = UDim2.new(0, 200, 0, 200),
+                Size = UDim2.new(0, calculateElementSize(200), 0, calculateElementSize(200)), -- Tự động điều chỉnh
                 Visible = false,
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
-                Position = UDim2.new(0, -360, 0, -150),
+                Position = UDim2.new(0, -calculateElementSize(360), 0, -calculateElementSize(150)), -- Tự động điều chỉnh
                 BorderSizePixel = 2,
                 BackgroundColor3 = Library.Colors.Window,
             })
@@ -1440,7 +1489,7 @@ Library:Create("UIListLayout", {
             local BRIGHTNESS = Library:Create("Frame", {
                 Name = "brightness",
                 Parent = COLORPICKER,
-                Size = UDim2.new(1, -20, 1, -20),
+                Size = UDim2.new(1, -calculateElementSize(20), 1, -calculateElementSize(20)), -- Tự động điều chỉnh
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 BorderSizePixel = 2,
             })
@@ -1459,7 +1508,7 @@ Library:Create("UIListLayout", {
             local PICKER_BRIGHTNESS = Library:Create("ImageLabel", {
                 Name = "picker",
                 Parent = BRIGHTNESS,
-                Size = UDim2.new(0, 10, 0, 10),
+                Size = UDim2.new(0, calculateElementSize(10), 0, calculateElementSize(10)), -- Tự động điều chỉnh
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 2,
@@ -1471,8 +1520,8 @@ Library:Create("UIListLayout", {
             local COPY = Library:Create("Frame", {
                 Parent = COLORPICKER,
                 BackgroundColor3 = Library.Colors.Window,
-                Size = UDim2.new(0.5, -1, 0, 14),
-                Position = UDim2.new(0, -6, 0, -23),
+                Size = UDim2.new(0.5, -1, 0, calculateElementSize(14)), -- Tự động điều chỉnh
+                Position = UDim2.new(0, -calculateElementSize(6), 0, -calculateElementSize(23)), -- Tự động điều chỉnh
                 BorderSizePixel = 0
             })
             
@@ -1481,7 +1530,7 @@ Library:Create("UIListLayout", {
                 Size = UDim2.new(1, 0, 1, 0),
                 BackgroundTransparency = 1,
                 TextColor3 = Color3.fromRGB(255,255,255),
-                TextSize = 9,
+                TextSize = calculateFontSize(9), -- Tự động điều chỉnh
                 Text = "copy",
                 FontFace = Library.Font,
                 TextXAlignment = Enum.TextXAlignment.Center,
@@ -1491,8 +1540,8 @@ Library:Create("UIListLayout", {
             local PASTE = Library:Create("Frame", {
                 Parent = COLORPICKER,
                 BackgroundColor3 = Library.Colors.Window,
-                Size = UDim2.new(0.5, -1, 0, 14),
-                Position = UDim2.new(1, 6, 0, -23),
+                Size = UDim2.new(0.5, -1, 0, calculateElementSize(14)), -- Tự động điều chỉnh
+                Position = UDim2.new(1, calculateElementSize(6), 0, -calculateElementSize(23)), -- Tự động điều chỉnh
                 AnchorPoint = Vector2.new(1, 0),
                 BorderSizePixel = 0
             })
@@ -1505,7 +1554,7 @@ Library:Create("UIListLayout", {
                 Selectable = false,
                 FontFace = Library.Font,
                 TextColor3 = Color3.fromRGB(255,255,255),
-                TextSize = 9,
+                TextSize = calculateFontSize(9), -- Tự động điều chỉnh
                 TextStrokeTransparency = 0,
                 TextXAlignment = Enum.TextXAlignment.Center,
             })
@@ -1513,17 +1562,17 @@ Library:Create("UIListLayout", {
             Library:Create("UIPadding", {
                 Name = "UIPadding",
                 Parent = COLORPICKER,
-                PaddingBottom = UDim.new(0, 5),
-                PaddingTop = UDim.new(0, 5),
-                PaddingLeft = UDim.new(0, 5),
-                PaddingRight = UDim.new(0, 5)
+                PaddingBottom = UDim.new(0, calculateElementSize(5)), -- Tự động điều chỉnh
+                PaddingTop = UDim.new(0, calculateElementSize(5)), -- Tự động điều chỉnh
+                PaddingLeft = UDim.new(0, calculateElementSize(5)), -- Tự động điều chỉnh
+                PaddingRight = UDim.new(0, calculateElementSize(5)), -- Tự động điều chỉnh
             })
             
             local HUE = Library:Create("ImageLabel", {
                 Name = "hue",
                 Parent = COLORPICKER,
                 AnchorPoint = Vector2.new(1, 0),
-                Size = UDim2.new(0, 15, 1, -20),
+                Size = UDim2.new(0, calculateElementSize(15), 1, -calculateElementSize(20)), -- Tự động điều chỉnh
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 Position = UDim2.new(1, 0, 0, 0),
                 BorderSizePixel = 2,
@@ -1543,7 +1592,7 @@ Library:Create("UIListLayout", {
                 Name = "transparency",
                 Parent = COLORPICKER,
                 AnchorPoint = Vector2.new(0, 1),
-                Size = UDim2.new(1, -20, 0, 15),
+                Size = UDim2.new(1, -calculateElementSize(20), 0, calculateElementSize(15)), -- Tự động điều chỉnh
                 BackgroundTransparency = 1,
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 Position = UDim2.new(0, 0, 1, 0),
@@ -1563,7 +1612,7 @@ Library:Create("UIListLayout", {
                 Name = "preview",
                 Parent = COLORPICKER,
                 AnchorPoint = Vector2.new(1, 1),
-                Size = UDim2.new(0, 15, 0, 15),
+                Size = UDim2.new(0, calculateElementSize(15), 0, calculateElementSize(15)), -- Tự động điều chỉnh
                 BorderColor3 = Color3.fromRGB(0, 0, 0),
                 Position = UDim2.new(1, 0, 1, 0),
                 BorderSizePixel = 2,
@@ -1891,7 +1940,7 @@ function section:AddSlider(options)
     end
     
     local SLIDERCONTAINER = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 20),
+        Size = UDim2.new(1, 0, 0, calculateElementSize(35)), -- Tự động điều chỉnh
         Parent = ELEMENTCONTAINER,
         BackgroundTransparency = 1,
         Name = "SliderContainer"
@@ -1899,11 +1948,11 @@ function section:AddSlider(options)
     
     local SLIDERTITLE = Library:Create("TextLabel", {
         Parent = SLIDERCONTAINER,
-        Size = UDim2.new(1, -2, 1, -15),
+        Size = UDim2.new(1, -2, 1, -calculateElementSize(15)), -- Tự động điều chỉnh
         Position = UDim2.new(0, 2, 0, 0),
         BackgroundTransparency = 1,
         TextColor3 = Library.Colors.ElementInactive,
-        TextSize = 9,
+        TextSize = calculateFontSize(9), -- Tự động điều chỉnh
         Text = options.name,
         FontFace = Library.Font,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1912,7 +1961,7 @@ function section:AddSlider(options)
     
     local SLIDERBACK = Library:Create("Frame", {
         Parent = SLIDERCONTAINER,
-        Size = UDim2.new(1, -60, 0, 6),
+        Size = UDim2.new(1, -calculateElementSize(60), 0, calculateElementSize(6)), -- Tự động điều chỉnh
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 0, 1, 0),
         BackgroundColor3 = Color3.fromRGB(25, 25, 25),
@@ -1937,7 +1986,7 @@ function section:AddSlider(options)
     
     local SLIDER = Library:Create("Frame", {
         Parent = SLIDERBACK,
-        Size = UDim2.new(1, -80, 1, 0),
+        Size = UDim2.new(1, -calculateElementSize(80), 1, 0), -- Tự động điều chỉnh
         Name = "Slider",
         ZIndex = 1,
         BorderSizePixel = 0
@@ -1953,16 +2002,16 @@ function section:AddSlider(options)
     })
     
     local SLIDERVALUE = Library:Create("TextLabel", {
-        Size = UDim2.new(0, 20, 0, 10),
+        Size = UDim2.new(0, calculateElementSize(20), 0, calculateElementSize(10)), -- Tự động điều chỉnh
         Parent = SLIDER,
         TextXAlignment = Enum.TextXAlignment.Center,
-        Position = UDim2.new(1, -10, 0, -15),
+        Position = UDim2.new(1, -calculateElementSize(10), 0, -calculateElementSize(15)), -- Tự động điều chỉnh
         BackgroundTransparency = 1,
         TextColor3 = Library.Colors.ElementInactive,
         FontFace = Library.Font,
         Text = math.round(options.value),
         TextTransparency = 1,
-        TextSize = 8,
+        TextSize = calculateFontSize(8), -- Tự động điều chỉnh
         Name = options.name,
         Visible = false
     })
@@ -1975,12 +2024,12 @@ function section:AddSlider(options)
     
     local TEXTBOX = Library:Create("TextBox", {
         Parent = SLIDERCONTAINER,
-        Size = UDim2.new(0, 50, 0, 14),
-        Position = UDim2.new(1, -55, 0.5, -7),
+        Size = UDim2.new(0, calculateElementSize(50), 0, calculateElementSize(14)), -- Tự động điều chỉnh
+        Position = UDim2.new(1, -calculateElementSize(55), 0.5, -calculateElementSize(7)), -- Tự động điều chỉnh
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 10,
+        TextSize = calculateFontSize(10), -- Tự động điều chỉnh
         FontFace = Library.Font,
         Text = tostring(options.default),
         Name = "SliderTextBox"
@@ -2179,14 +2228,14 @@ end
         
         local DROPDOWNCONTAINER = Library:Create("Frame", {
             Parent = ELEMENTCONTAINER,
-            Size = UDim2.new(1, 0, 0, 30),
+            Size = UDim2.new(1, 0, 0, calculateElementSize(40)), -- Tự động điều chỉnh
             Name = options.name,
             BorderSizePixel = 0,
             BackgroundTransparency = 1,
         })
         
         local DROPDOWNTEXT = Library:Create("TextLabel", {
-            Size = UDim2.new(1,0,1,-20),
+            Size = UDim2.new(1,0,1,-calculateElementSize(20)), -- Tự động điều chỉnh
             Parent = DROPDOWNCONTAINER,
             Position = UDim2.new(0, 2, 0, -1),
             BackgroundTransparency = 1,
@@ -2194,14 +2243,14 @@ end
             FontFace = Library.Font,
             Text = options.name,
             TextColor3 = Library.Colors.ElementActive,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             Name = options.name
         })
         
         local ACTIVECHOICE = Library:Create("Frame", { -- Giữ nguyên Frame để có frame đằng sau
-            Size = UDim2.new(1,0,0,15),
+            Size = UDim2.new(1,0,0,calculateElementSize(15)), -- Tự động điều chỉnh
             AnchorPoint = Vector2.new(0.5, 0),
-            Position = UDim2.new(0.5, 0, 0, 13),
+            Position = UDim2.new(0.5, 0, 0, calculateElementSize(13)), -- Tự động điều chỉnh
             Parent = DROPDOWNCONTAINER,
             BorderSizePixel = 1,
             BackgroundColor3 = Color3.fromRGB(20,20,20),
@@ -2223,14 +2272,14 @@ end
         local ACTIVETEXT = Library:Create("TextLabel", {
             Size = UDim2.new(1,0,0,0),
             Parent = ACTIVECHOICE,
-            Position = UDim2.new(0.5, 0, 0, 8),
+            Position = UDim2.new(0.5, 0, 0, calculateElementSize(8)), -- Tự động điều chỉnh
             AnchorPoint = Vector2.new(0.5, 0),
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Center,
             FontFace = Library.Font,
             Text = defaultValue or "",
             TextColor3 = Library.Colors.ElementInactive,
-            TextSize = 9,
+            TextSize = calculateFontSize(9), -- Tự động điều chỉnh
             Name = "DropdownText",
             ZIndex = dropdownindex + 5,
         })
@@ -2238,7 +2287,7 @@ end
         local CHOICEHOLDER = Library:Create("ScrollingFrame", {
             Size = UDim2.new(1, -1, 0, 0),
             CanvasSize = UDim2.new(0,0,10,0),
-            Position = UDim2.new(0, 0, 0, 14),
+            Position = UDim2.new(0, 0, 0, calculateElementSize(14)), -- Tự động điều chỉnh
             Parent = ACTIVECHOICE,
             BackgroundTransparency = 1,
             ScrollBarThickness = 0,
@@ -2280,7 +2329,7 @@ end
             -- Đóng dropdown
             dropdown.state = false
             Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
+            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,calculateElementSize(15))}) -- Tự động điều chỉnh
             Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
             CHOICEHOLDER.Visible = false
             BLOCKINPUT.Visible = false
@@ -2289,7 +2338,7 @@ end
         -- Thêm các lựa chọn
         for _, name in ipairs(options.list) do
             local CHOICE = Library:Create("Frame", { -- Giữ nguyên Frame để có frame đằng sau
-                Size = UDim2.new(1,-2,0,15),
+                Size = UDim2.new(1,-2,0,calculateElementSize(15)), -- Tự động điều chỉnh
                 Parent = CHOICEHOLDER,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
@@ -2313,7 +2362,7 @@ end
                 FontFace = Library.Font,
                 Text = name,
                 TextColor3 = Library.Colors.ElementInactive,
-                TextSize = 8,
+                TextSize = calculateFontSize(8), -- Tự động điều chỉnh
                 ZIndex = dropdownindex + 5,
             })
             
@@ -2331,7 +2380,7 @@ end
             if name == defaultValue then
                 CHOICETEXT.TextColor3 = Library.Colors.Accent
                 CHOICEBAR.BackgroundTransparency = 0.5
-                CHOICEBAR.Size = UDim2.new(0,25,0,1)
+                CHOICEBAR.Size = UDim2.new(0,calculateElementSize(25),0,1) -- Tự động điều chỉnh
             end
             
             -- Xử lý click
@@ -2343,7 +2392,7 @@ end
             CLICKABLE.MouseEnter:Connect(function()
                 if name ~= dropdown.currentSelection then
                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
-                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
+                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,calculateElementSize(25),0,1)}) -- Tự động điều chỉnh
                 end
             end)
             
@@ -2368,19 +2417,19 @@ end
                     local height = 0
                     for _, choice in ipairs(CHOICEHOLDER:GetChildren()) do
                         if choice:IsA("Frame") then
-                            height = height + 15
+                            height = height + calculateElementSize(15) -- Tự động điều chỉnh
                         end
                     end
                     
-                    local endsize = math.min(height, 150)
-                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - 13)})
-                    Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - 2)})
+                    local endsize = math.min(height, calculateElementSize(150)) -- Tự động điều chỉnh
+                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - calculateElementSize(13))}) -- Tự động điều chỉnh
+                    Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - calculateElementSize(2))}) -- Tự động điều chỉnh
                     CHOICEHOLDER.Visible = true
                     BLOCKINPUT.Visible = true
                 else
                     -- Đóng dropdown
                     Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
+                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,calculateElementSize(15))}) -- Tự động điều chỉnh
                     Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
                     CHOICEHOLDER.Visible = false
                     BLOCKINPUT.Visible = false
@@ -2392,7 +2441,7 @@ end
         BLOCKINPUT.MouseButton1Click:Connect(function()
             dropdown.state = false
             Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
+            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,calculateElementSize(15))}) -- Tự động điều chỉnh
             Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0)})
             CHOICEHOLDER.Visible = false
             BLOCKINPUT.Visible = false
@@ -2420,7 +2469,7 @@ end
         
         local LISTCONTAINER = Library:Create("Frame", {
             Parent = ELEMENTCONTAINER,
-            Size = UDim2.new(1, 0, 0, 100),
+            Size = UDim2.new(1, 0, 0, calculateElementSize(100)), -- Tự động điều chỉnh
             Name = options.name,
             BorderSizePixel = 1,
             BorderColor3 = Color3.fromRGB(255,255,255),
@@ -2449,7 +2498,7 @@ end
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
             VerticalAlignment = Enum.VerticalAlignment.Top,
-            Padding = UDim.new(0, 4),
+            Padding = UDim.new(0, calculateElementSize(4)), -- Tự động điều chỉnh
             SortOrder = Enum.SortOrder.LayoutOrder,
             Name = "ListLayout"
         })
@@ -2475,14 +2524,13 @@ end
         Library:connection(CHOICEHOLDER.MouseEnter, function()
             List.MouseInside = true
         end)
-
         Library:connection(CHOICEHOLDER.MouseLeave, function()
             List.MouseInside = false
         end)
         
         function List:AddChoice(name)
             local CHOICE = Library:Create("Frame", {
-                Size = UDim2.new(1,-2,0,15),
+                Size = UDim2.new(1,-2,0,calculateElementSize(15)), -- Tự động điều chỉnh
                 Parent = CHOICEHOLDER,
                 AnchorPoint = Vector2.new(0.5,0),
                 BackgroundTransparency = 1,
@@ -2499,7 +2547,7 @@ end
                 FontFace = Library.Font,
                 Text = name,
                 TextColor3 = Library.Colors.ElementInactive,
-                TextSize = 8,
+                TextSize = calculateFontSize(8), -- Tự động điều chỉnh
                 Name = name,
             })
             
@@ -2527,7 +2575,7 @@ end
             Library:connection(CHOICE.MouseEnter, function()
                 if List.CurrentChoice ~= choice.Name then
                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,calculateElementSize(35),0,1)}) -- Tự động điều chỉnh
                 end
                 choice.Hover = true
             end)
@@ -2544,7 +2592,7 @@ end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     if choice.Hover then
                         Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                        Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                        Library:tween(CHOICEBAR, {Size = UDim2.new(0,calculateElementSize(35),0,1)}) -- Tự động điều chỉnh
                         List.CurrentChoice = choice.Name
                         options.callback(choice.Name)
                     elseif List.MouseInside then
@@ -2591,7 +2639,7 @@ end
     -- Custom mouse cursor
     do
         local CURSOR = Library:Create("ImageLabel", {
-            Size = UDim2.new(0, 18, 0, 18),
+            Size = UDim2.new(0, calculateElementSize(18), 0, calculateElementSize(18)), -- Tự động điều chỉnh
             BackgroundTransparency = 1,
             ImageColor3 = Library.Colors.Accent,
             Image = "rbxassetid://17404277477",
@@ -2600,7 +2648,7 @@ end
         })
         
         Library:connection(_runservice.RenderStepped, function() 
-            CURSOR.Position = UDim2.new(0, mouse.X -6, 0, mouse.Y - 2) 
+            CURSOR.Position = UDim2.new(0, mouse.X -calculateElementSize(6), 0, mouse.Y - calculateElementSize(2)) -- Tự động điều chỉnh
         end)
     end
     
@@ -2645,5 +2693,4 @@ end
     
     return menu
 end 
-
 return ab.AddWindow()
