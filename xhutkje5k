@@ -2003,10 +2003,11 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
                 Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
                 
-                -- Hiển thị text khi kéo
+                -- Hiển thị text khi kéo - Đảm bảo đặt lại tất cả thuộc tính
                 SLIDERVALUE.Visible = true
                 SLIDERVALUE.TextTransparency = 0
-                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
+                SLIDERVALUE.TextColor3 = Library.Colors.Accent
+                SLIDERVALUE.Text = TEXTBOX.Text .. (options.suffix or "")
                 
                 slider:SetValue()
             end
@@ -2032,9 +2033,11 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.Default
                 Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Chỉ ẩn text thay vì xóa nó
+                -- Chỉ ẩn text, không thay đổi thuộc tính khác
                 Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
                     SLIDERVALUE.Visible = false
+                    -- Đặt lại màu sắc để chuẩn bị cho lần kéo sau
+                    SLIDERVALUE.TextColor3 = Library.Colors.ElementInactive
                 end)
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
