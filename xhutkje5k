@@ -514,37 +514,64 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        local LEFTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "LeftContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = LEFTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingLeft = UDim.new(0,10),
-        })
-        
-        local RIGHTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, 0, 0, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "RightContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = RIGHTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingRight = UDim.new(0,10),
-        })
+       -- Trong hàm tab:AddTab, thay đổi phần tạo LEFTCONTAINER và RIGHTCONTAINER
+local LEFTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "LeftContainer",
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    ScrollBarImageTransparency = 0.3,
+})
+
+Library:Create("UIPadding", {
+    Parent = LEFTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingLeft = UDim.new(0,10),
+})
+
+Library:Create("UIListLayout", { 
+    Parent = LEFTCONTAINER,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    FillDirection = Enum.FillDirection.Vertical,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+    Padding = UDim.new(0, 8),
+})
+
+local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "RightContainer",
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    ScrollBarImageTransparency = 0.3,
+})
+
+Library:Create("UIPadding", {
+    Parent = RIGHTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingRight = UDim.new(0,10),
+})
+
+Library:Create("UIListLayout", { 
+    Parent = RIGHTCONTAINER,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    FillDirection = Enum.FillDirection.Vertical,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    VerticalAlignment = Enum.VerticalAlignment.Top,
+    Padding = UDim.new(0, 8),
+})
         
         -- Tab functionality
         local function Activate()
@@ -790,164 +817,90 @@ ab.AddWindow = function (options)
             return tab
         end
         
--- Thay đổi phần AddSection trong function tab:AddSection
 function tab:AddSection(options)
     options = Library:validate({
         tab = nil,
         name = "preview",
         side = "Left",
-        height = "fill" -- fill, half,
+        height = "auto" -- Thay đổi từ "fill" sang "auto"
     }, options or {})
     
     local section = { Hover = false, }
     local NewPos
-
-    -- Calculate Section Position
+    
+    -- Tính toán vị trí section
     if options.side == "Left" then
         if getgenv().subtab then
             local subtab = options.tab
             if LeftHeight[subtab] and #LeftHeight[subtab] > 0 then
-                NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + 30
+                NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + 10 -- Giảm khoảng cách
             else
-                NewPos = 15
+                NewPos = 10
             end
         else
             if LeftHeight and #LeftHeight > 0 then
-                NewPos = LeftHeight[#LeftHeight] + 30
+                NewPos = LeftHeight[#LeftHeight] + 10 -- Giảm khoảng cách
             else
-                NewPos = 15
+                NewPos = 10
             end
         end
     else
         if getgenv().subtab then
             local subtab = options.tab
             if RightHeight[subtab] and #RightHeight[subtab] > 0 then
-                NewPos = RightHeight[subtab][#RightHeight[subtab]] + 30
+                NewPos = RightHeight[subtab][#RightHeight[subtab]] + 10 -- Giảm khoảng cách
             else
-                NewPos = 15
+                NewPos = 10
             end
         else
             if RightHeight and #RightHeight > 0 then
-                NewPos = RightHeight[#RightHeight] + 30
+                NewPos = RightHeight[#RightHeight] + 10 -- Giảm khoảng cách
             else
-                NewPos = 15
+                NewPos = 10
             end
         end
     end
-
+    
     local SECTION = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, options.height),
+        Size = UDim2.new(1, 0, 0, 0), -- Bắt đầu với chiều cao 0
         AnchorPoint = Vector2.new(0, 0),
         BackgroundColor3 = Library.Colors.Section,
-        Position = UDim2.new(0, 0, 0, NewPos - 12),
+        Position = UDim2.new(0, 0, 0, NewPos),
         BorderSizePixel = 0,
-        Name = options.name
-    })
-
-    local SECTIONTEXT = Library:Create("TextLabel", {
-        Parent = SECTION,
-        AnchorPoint = Vector2.new(0.5,0),
-        Position = UDim2.new(0.5,0,0,-6),
-        BackgroundColor3 = Library.Colors.Section,
-        BorderSizePixel = 0,
-        TextColor3 = Library.Colors.SectionText,
-        TextSize = 9,
-        FontFace = Library.Font,
-        Text = options.name,
-        Name = "SectionText"
+        Name = options.name,
+        AutomaticSize = Enum.AutomaticSize.Y, -- Tự động điều chỉnh chiều cao
     })
     
-    Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
-        SECTIONTEXT.Size = UDim2.new(0,SECTIONTEXT.TextBounds.X + 25,0,10) 
-    end)
+    -- ... phần còn lại của code tạo section ...
     
-    -- THAY ĐỔI QUAN TRỌNG: Chuyển từ Frame sang ScrollingFrame để có thể cuộn
-    local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
-        Parent = SECTION,
-        Size = UDim2.new(1, 0, 1, -10),
-        Position = UDim2.new(0, 0, 0, 10),
-        BackgroundTransparency = 1,
-        Name = "ElementContainer",
-        CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
-        ScrollBarThickness = 4, -- Hiển thị thanh cuộn
-        ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
-        BorderSizePixel = 0,
-    })
-
-    Library:Create("UIListLayout", { 
-        Parent = ELEMENTCONTAINER,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-        Name = "ElementLayout"
-    })
-    
-    -- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
-    local function updateCanvasSize()
-        local UIListLayout = ELEMENTCONTAINER:FindFirstChild("ElementLayout")
-        if UIListLayout then
-            local padding = ELEMENTCONTAINER:FindFirstChild("UIPadding")
-            local topPadding = padding and padding.PaddingTop.Offset or 0
-            local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-            local leftPadding = padding and padding.PaddingLeft.Offset or 0
-            local rightPadding = padding and padding.PaddingRight.Offset or 0
-            
-            ELEMENTCONTAINER.CanvasSize = UDim2.new(
-                0, UIListLayout.AbsoluteContentSize.X + leftPadding + rightPadding,
-                0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding
-            )
+    -- Cập nhật kích thước canvas của container
+    local function updateContainerCanvas()
+        local container
+        if options.side == "Left" then
+            if getgenv().subtab then
+                container = CONTENTCONTAINER:FindFirstChild(options.tab):FindFirstChild("LeftContainer")
+            else
+                container = LEFTCONTAINER
+            end
+        else
+            if getgenv().subtab then
+                container = CONTENTCONTAINER:FindFirstChild(options.tab):FindFirstChild("RightContainer")
+            else
+                container = RIGHTCONTAINER
+            end
+        end
+        
+        if container and container:IsA("ScrollingFrame") then
+            local UIListLayout = container:FindFirstChild("UIListLayout")
+            if UIListLayout then
+                container.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
+            end
         end
     end
     
-    Library:Create("UIPadding", { 
-        Parent = ELEMENTCONTAINER,
-        PaddingLeft = UDim.new(0,15),
-        PaddingRight = UDim.new(0,15),
-        PaddingTop = UDim.new(0,5),
-        PaddingBottom = UDim.new(0,5),
-    })
-    
-    -- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
-    Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
-        if child:IsA("GuiObject") then
-            updateCanvasSize()
-        end
-    end)
-    
-    local pos = SECTION.Position.Y.Offset
-    if options.height == "fill" then
-        SECTION.Size = UDim2.new(1,0,1,-pos)
-    elseif options.height == "half" then
-        SECTION.Size = UDim2.new(1,0,0.5,-pos/2)
-    end
-
-    -- Handle side picking
-    do
-        if getgenv().subtab and options.side == "Right" then
-            local subtab = options.tab
-            SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("RightContainer")
-            table.insert(RightHeight[subtab], SECTION.AbsoluteSize.Y)
-        elseif getgenv().subtab then
-            local subtab = options.tab
-            SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("LeftContainer")
-            table.insert(LeftHeight[subtab], SECTION.AbsoluteSize.Y)
-        end
-        if options.side == "Right" and not getgenv().subtab then
-            SECTION.Parent = RIGHTCONTAINER
-            table.insert(RightHeight,SECTION.AbsoluteSize.Y)
-        elseif not getgenv().subtab then
-            SECTION.Parent = LEFTCONTAINER
-            table.insert(LeftHeight, SECTION.AbsoluteSize.Y)
-        end
-    end
-
-    Library:Create("UIStroke", { 
-        Parent = SECTION,
-        Color = Library.Colors.BorderColor
-    })
-    
-    -- Cập nhật kích thước canvas khi khởi tạo
-    updateCanvasSize()
-    
+    -- Gọi hàm cập nhật khi section được thêm vào
+    updateContainerCanvas()
+     
     -- Button element
     function section:AddButton(options)
         options = Library:validate({
