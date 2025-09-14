@@ -1,4 +1,3 @@
-
 game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
@@ -849,28 +848,23 @@ function tab:AddSection(options)
     end)
     
     -- THAY ĐỔI QUAN TRỌNG: Chuyển từ Frame sang ScrollingFrame để có thể cuộn
--- Trong phần AddSection, đảm bảo ScrollingFrame được thiết lập như sau:
-local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
-    Parent = SECTION,
-    Size = UDim2.new(1, 0, 1, -10),
-    Position = UDim2.new(0, 0, 0, 10),
-    BackgroundTransparency = 1,
-    Name = "ElementContainer",
-    CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
-    ScrollBarThickness = 4, -- Hiển thị thanh cuộn
-    ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
-    BorderSizePixel = 0,
-    AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Thêm dòng này
-})
-Library:Create("UIListLayout", { 
-    Parent = ELEMENTCONTAINER,
-    SortOrder = Enum.SortOrder.LayoutOrder,
-    Padding = UDim.new(0, 8),
-    Name = "ElementLayout",
-    FillDirection = Enum.FillDirection.Vertical,
-    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-    VerticalAlignment = Enum.VerticalAlignment.Top,
-})
+    local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
+        Parent = SECTION,
+        Size = UDim2.new(1, 0, 1, -10),
+        Position = UDim2.new(0, 0, 0, 10),
+        BackgroundTransparency = 1,
+        Name = "ElementContainer",
+        CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
+        ScrollBarThickness = 4, -- Hiển thị thanh cuộn
+        ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
+        BorderSizePixel = 0,
+    })
+    Library:Create("UIListLayout", { 
+        Parent = ELEMENTCONTAINER,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+        Name = "ElementLayout"
+    })
     
     -- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
     local function updateCanvasSize()
@@ -897,17 +891,13 @@ Library:Create("UIListLayout", {
         PaddingBottom = UDim.new(0,5),
     })
     
--- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
-Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
-    if child:IsA("GuiObject") then
-        updateCanvasSize()
-    end
-end)
-
--- Thêm sự kiện này để theo dõi khi kích thước thay đổi
-Library:connection(ELEMENTCONTAINER:GetPropertyChangedSignal("AbsoluteCanvasSize"), function()
-    updateCanvasSize()
-end)
+    -- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
+    Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
+        if child:IsA("GuiObject") then
+            updateCanvasSize()
+        end
+    end)
+    
     local pos = SECTION.Position.Y.Offset
     if options.height == "fill" then
         SECTION.Size = UDim2.new(1,0,1,-pos)
@@ -1882,20 +1872,19 @@ function section:AddSlider(options)
         Rotation = 90,
     })
     
-    -- Tạo một TextLabel để hiển thị giá trị khi kéo
     local SLIDERVALUE = Library:Create("TextLabel", {
-        Size = UDim2.new(0, 30, 0, 10),
+        Size = UDim2.new(0, 20, 0, 10),
         Parent = SLIDER,
         TextXAlignment = Enum.TextXAlignment.Center,
         Position = UDim2.new(1, -10, 0, -15),
         BackgroundTransparency = 1,
         TextColor3 = Library.Colors.ElementInactive,
         FontFace = Library.Font,
-        Text = tostring(options.default),
-        TextTransparency = 1, -- Bắt đầu ẩn
+        Text = math.round(options.value),
+        TextTransparency = 1,
         TextSize = 8,
-        Name = "SliderValue",
-        ZIndex = 10
+        Name = options.name,
+        Visible = false
     })
     
     Library:Create("UIStroke", {
@@ -1940,8 +1929,6 @@ function section:AddSlider(options)
                 slidervalue = 0
             end
         end
-        
-        -- Cập nhật giá trị hiển thị
         SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
         SLIDER:TweenSize(UDim2.fromScale((slidervalue - options.min) / (options.max - options.min), 1), Enum.EasingDirection.In, Enum.EasingStyle.Linear, 0.1, true)
         TEXTBOX.Text = slidervalue
@@ -1958,6 +1945,7 @@ function section:AddSlider(options)
     
     -- Initialize slider
     SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1)
+    SLIDERVALUE.Text = options.default .. (options.suffix or "")
     TEXTBOX.Text = options.default
     
     -- Hàm để vô hiệu hóa cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
@@ -2015,13 +2003,9 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
                 Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
                 
-                -- Hiển thị text khi kéo với hiệu ứng fade in
-                SLIDERVALUE.TextTransparency = 1
-                SLIDERVALUE.TextColor3 = Library.Colors.ElementInactive
-                Library:tween(SLIDERVALUE, {
-                    TextTransparency = 0,
-                    TextColor3 = Library.Colors.Accent
-                })
+                -- Hiển thị text khi kéo
+                SLIDERVALUE.Visible = true
+                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
                 
                 slider:SetValue()
             end
@@ -2030,17 +2014,6 @@ function section:AddSlider(options)
         Library:connection(SLIDERBACK.InputChanged, function(input)
             if slider.Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 slider:SetValue()
-                
-                -- Cập nhật vị trí của text để theo con trỏ
-                local mouseX = mouse.X
-                if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
-                    local relativeX = mouseX - SLIDERBACK.AbsolutePosition.X
-                    local sliderWidth = SLIDERBACK.AbsoluteSize.X
-                    local positionRatio = relativeX / sliderWidth
-                    
-                    -- Đặt text ở vị trí tương đối trên slider
-                    SLIDERVALUE.Position = UDim2.new(positionRatio, 0, 0, -15)
-                end
             end
         end)
     
@@ -2058,11 +2031,9 @@ function section:AddSlider(options)
                 uis.MouseBehavior = Enum.MouseBehavior.Default
                 Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Ẩn text với hiệu ứng fade out và khôi phục màu sắc ban đầu
-                Library:tween(SLIDERVALUE, {
-                    TextTransparency = 1,
-                    TextColor3 = Library.Colors.ElementInactive
-                })
+                -- Ẩn text hoàn toàn khi ngừng kéo
+                Library:tween(SLIDERVALUE, {TextTransparency = 1})
+                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
