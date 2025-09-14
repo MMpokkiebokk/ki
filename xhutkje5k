@@ -835,13 +835,22 @@ function tab:AddSection(options)
         end
     end
 
+    -- THAY ĐỔI QUAN TRỌNG: Xử lý kích thước section cho "auto"
+    local sectionHeight
+    if options.height == "auto" then
+        sectionHeight = 50 -- Kích thước ban đầu, sẽ được cập nhật sau
+    else
+        sectionHeight = options.height
+    end
+
     local SECTION = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, options.height == "auto" and 50 or options.height), -- Giá trị mặc định cho "auto"
+        Size = UDim2.new(1, 0, 0, sectionHeight),
         AnchorPoint = Vector2.new(0, 0),
         BackgroundColor3 = Library.Colors.Section,
         Position = UDim2.new(0, 0, 0, NewPos - 12),
         BorderSizePixel = 0,
-        Name = options.name
+        Name = options.name,
+        AutomaticSize = options.height == "auto" and Enum.AutomaticSize.Y or Enum.AutomaticSize.None -- Bật tự động điều chỉnh chiều cao cho "auto"
     })
 
     local SECTIONTEXT = Library:Create("TextLabel", {
@@ -854,7 +863,8 @@ function tab:AddSection(options)
         TextSize = 9,
         FontFace = Library.Font,
         Text = options.name,
-        Name = "SectionText"
+        Name = "SectionText",
+        AutomaticSize = Enum.AutomaticSize.XY
     })
     
     Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
@@ -869,7 +879,7 @@ function tab:AddSection(options)
         BackgroundTransparency = 1,
         Name = "ElementContainer",
         CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
-        ScrollBarThickness = 4, -- Hiển thị thanh cuộn
+        ScrollBarThickness = options.height == "auto" and 0 or 4, -- Ẩn thanh cuộn cho section "auto"
         ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
         BorderSizePixel = 0,
         ScrollingEnabled = options.height ~= "auto" -- Tắt cuộn cho section "auto"
@@ -899,7 +909,50 @@ function tab:AddSection(options)
             
             -- Cập nhật kích thước section nếu là "auto"
             if options.height == "auto" then
-                SECTION.Size = UDim2.new(1, 0, 0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding + 30) -- +30 cho tiêu đề section và padding
+                -- Tính toán kích thước section dựa trên nội dung
+                local contentHeight = UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding + 30 -- +30 cho tiêu đề section và padding
+                SECTION.Size = UDim2.new(1, 0, 0, contentHeight)
+                
+                -- Cập nhật vị trí cho các section tiếp theo
+                if options.side == "Left" then
+                    if getgenv().subtab then
+                        local subtab = options.tab
+                        if LeftHeight[subtab] then
+                            for i, height in ipairs(LeftHeight[subtab]) do
+                                if height == SECTION.AbsoluteSize.Y then
+                                    LeftHeight[subtab][i] = contentHeight
+                                    break
+                                end
+                            end
+                        end
+                    else
+                        for i, height in ipairs(LeftHeight) do
+                            if height == SECTION.AbsoluteSize.Y then
+                                LeftHeight[i] = contentHeight
+                                break
+                            end
+                        end
+                    end
+                else
+                    if getgenv().subtab then
+                        local subtab = options.tab
+                        if RightHeight[subtab] then
+                            for i, height in ipairs(RightHeight[subtab]) do
+                                if height == SECTION.AbsoluteSize.Y then
+                                    RightHeight[subtab][i] = contentHeight
+                                    break
+                                end
+                            end
+                        end
+                    else
+                        for i, height in ipairs(RightHeight) do
+                            if height == SECTION.AbsoluteSize.Y then
+                                RightHeight[i] = contentHeight
+                                break
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -915,6 +968,8 @@ function tab:AddSection(options)
     -- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
     Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
         if child:IsA("GuiObject") then
+            -- Đợi một chút để đảm bảo UIListLayout đã cập nhật
+            game:GetService("RunService").Heartbeat:Wait()
             updateCanvasSize()
         end
     end)
