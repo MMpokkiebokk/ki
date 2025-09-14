@@ -1,10 +1,10 @@
+
 game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
 local mouse = gs("Players").LocalPlayer:GetMouse()
 local ab = {}
-
 local Library = {
     Ui_Bind = Enum.KeyCode.RightShift,
     Colors = {
@@ -28,7 +28,6 @@ local Library = {
     Connections = {},
     Font = nil,
 }
-
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
     if not isfile(Asset.Id) then writefile(Asset.Id, Asset.Font) end
@@ -47,7 +46,6 @@ function Library:Register_Font(Name, Weight, Style, Asset)
     writefile(Name .. ".font", _http:JSONEncode(Data))
     return getcustomasset(Name .. ".font")
 end
-
 -- Helper functions
 function Library:Create(Class, Properties, Secure)
     local _Instance
@@ -62,7 +60,6 @@ function Library:Create(Class, Properties, Secure)
     table.insert(self.Instances, _Instance)
     return _Instance
 end
-
 function Library:validate(defaults, options)
     for i,v in pairs(defaults) do
         if options[i] == nil then
@@ -71,14 +68,12 @@ function Library:validate(defaults, options)
     end
     return options
 end
-
 function Library:connection(signal, callback, tbl)
     local connection = signal:Connect(callback)
     table.insert(self.Connections, connection)
     if tbl then table.insert(tbl, connection) end
     return connection
 end
-
 function Library:unload()
     for _,v in next, self.Instances do 
         if v and v.Parent then 
@@ -91,7 +86,6 @@ function Library:unload()
         end 
     end
 end
-
 function Library:tween(object, goal, callback)
     local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
     if callback then
@@ -99,7 +93,6 @@ function Library:tween(object, goal, callback)
     end
     tween:Play()
 end
-
 function lerp(startValue, endValue, duration, callback)
     local startTime = tick()
     local completed = false
@@ -121,14 +114,12 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
-
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
 local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 local gameName = productInfo.Name
 local dropdownindex = 50
-
 ab.AddWindow = function (options)
     local options = options or {}
     options = Library:validate({
@@ -149,7 +140,6 @@ ab.AddWindow = function (options)
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
-
     -- Watermark setup
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
@@ -801,7 +791,6 @@ function tab:AddSection(options)
     
     local section = { Hover = false, }
     local NewPos
-
     -- Calculate Section Position
     if options.side == "Left" then
         if getgenv().subtab then
@@ -834,7 +823,6 @@ function tab:AddSection(options)
             end
         end
     end
-
     local SECTION = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0, options.height),
         AnchorPoint = Vector2.new(0, 0),
@@ -843,7 +831,6 @@ function tab:AddSection(options)
         BorderSizePixel = 0,
         Name = options.name
     })
-
     local SECTIONTEXT = Library:Create("TextLabel", {
         Parent = SECTION,
         AnchorPoint = Vector2.new(0.5,0),
@@ -873,7 +860,6 @@ function tab:AddSection(options)
         ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
         BorderSizePixel = 0,
     })
-
     Library:Create("UIListLayout", { 
         Parent = ELEMENTCONTAINER,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -919,7 +905,6 @@ function tab:AddSection(options)
     elseif options.height == "half" then
         SECTION.Size = UDim2.new(1,0,0.5,-pos/2)
     end
-
     -- Handle side picking
     do
         if getgenv().subtab and options.side == "Right" then
@@ -939,7 +924,6 @@ function tab:AddSection(options)
             table.insert(LeftHeight, SECTION.AbsoluteSize.Y)
         end
     end
-
     Library:Create("UIStroke", { 
         Parent = SECTION,
         Color = Library.Colors.BorderColor
@@ -1778,12 +1762,6 @@ function tab:AddSection(options)
         return toggle
     end
     
-    -- Slider element
-   -- Thay đổi phần AddSlider trong function section:AddSlider
-
--- Slider element
--- Thay đổi phần AddSlider trong function section:AddSlider
-
 -- Slider element
 function section:AddSlider(options)
     options = Library:validate({
@@ -1803,8 +1781,24 @@ function section:AddSlider(options)
         Connection = nil
     }
     
+    -- Khởi tạo biến toàn cầu để theo dõi trạng thái kéo slider
     if not _G.isDraggingSlider then
         _G.isDraggingSlider = false
+    end
+    
+    -- Lưu trữ tất cả các ScrollingFrame có thể bị ảnh hưởng
+    local affectedScrollingFrames = {}
+    
+    -- Hàm để tìm tất cả các ScrollingFrame có thể bị ảnh hưởng
+    local function findAffectedScrollingFrames()
+        affectedScrollingFrames = {}
+        local current = ELEMENTCONTAINER
+        while current do
+            if current:IsA("ScrollingFrame") then
+                table.insert(affectedScrollingFrames, current)
+            end
+            current = current.Parent
+        end
     end
     
     local uis = game:GetService("UserInputService")
@@ -1845,7 +1839,7 @@ function section:AddSlider(options)
         BackgroundColor3 = Color3.fromRGB(25, 25, 25),
         BorderSizePixel = 0,
         Name = "SliderBack",
-        Active = true  -- Thêm dòng này để chặn sự kiện lan truyền
+        Active = true
     })
     
     local STROKE = Library:Create("UIStroke", {
@@ -1888,10 +1882,10 @@ function section:AddSlider(options)
         TextColor3 = Library.Colors.ElementInactive,
         FontFace = Library.Font,
         Text = math.round(options.value),
-        TextTransparency = 1,  -- Bắt đầu với trạng thái ẩn
+        TextTransparency = 1,
         TextSize = 8,
         Name = options.name,
-        Visible = false  -- Bắt đầu với trạng thái ẩn
+        Visible = false
     })
     
     Library:Create("UIStroke", {
@@ -1955,18 +1949,35 @@ function section:AddSlider(options)
     SLIDERVALUE.Text = options.default .. (options.suffix or "")
     TEXTBOX.Text = options.default
     
+    -- Hàm để vô hiệu hóa cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
+    local function disableScrolling()
+        findAffectedScrollingFrames()
+        for _, frame in ipairs(affectedScrollingFrames) do
+            if frame.ScrollingEnabled then
+                frame.ScrollingEnabled = false
+            end
+        end
+    end
+    
+    -- Hàm để khôi phục cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
+    local function enableScrolling()
+        for _, frame in ipairs(affectedScrollingFrames) do
+            if not frame.ScrollingEnabled then
+                frame.ScrollingEnabled = true
+            end
+        end
+    end
+    
+    -- Hàm để chặn sự kiện cuộn chuột
+    local function blockScrollInput(_, inputState)
+        if slider.Dragging then
+            return Enum.ContextActionResult.Sink
+        end
+        return Enum.ContextActionResult.Pass
+    end
+    
     -- Slider functionality
     do
-        local function blockCameraInput(_, inputState)
-            if slider.Dragging then
-                return Enum.ContextActionResult.Sink
-            end
-            return Enum.ContextActionResult.Pass
-        end
-        
-        -- Thêm biến để theo dõi trạng thái cuộn
-        local originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
-        
         Library:connection(SLIDERBACK.MouseEnter, function()
             slider.Hover = true
             Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementActive})
@@ -1985,17 +1996,17 @@ function section:AddSlider(options)
                 _G.isDraggingSlider = true
                 
                 -- Vô hiệu hóa cuộn khi bắt đầu kéo slider
-                originalScrollingEnabled = ELEMENTCONTAINER.ScrollingEnabled
-                ELEMENTCONTAINER.ScrollingEnabled = false
+                disableScrolling()
+                
+                -- Chặn sự kiện cuộn chuột
+                cas:BindAction("BlockScroll_" .. options.name, blockScrollInput, false, Enum.UserInputType.MouseWheel)
                 
                 uis.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-                cas:BindAction("BlockCamera", blockCameraInput, false, Enum.UserInputType.MouseMovement)
                 Library:tween(STROKE, {Color = Library.Colors.Accent, Transparency = 0})
                 
                 -- Hiển thị text khi kéo
                 SLIDERVALUE.Visible = true
-                SLIDERVALUE.TextTransparency = 0  -- Đặt trực tiếp thay vì tween
-                SLIDERVALUE.TextColor3 = Library.Colors.Accent
+                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.Accent, TextTransparency = 0})
                 
                 slider:SetValue()
             end
@@ -2012,17 +2023,18 @@ function section:AddSlider(options)
                 slider.Dragging = false
                 _G.isDraggingSlider = false
                 
-                -- Khôi phục trạng thái cuộn ban đầu
-                ELEMENTCONTAINER.ScrollingEnabled = originalScrollingEnabled
+                -- Khôi phục cuộn khi kết thúc kéo slider
+                enableScrolling()
+                
+                -- Hủy chặn sự kiện cuộn chuột
+                cas:UnbindAction("BlockScroll_" .. options.name)
                 
                 uis.MouseBehavior = Enum.MouseBehavior.Default
-                cas:UnbindAction("BlockCamera")
                 Library:tween(STROKE, {Color = Color3.fromRGB(0, 0, 0), Transparency = 0})
                 
-                -- Ẩn text khi ngừng kéo thay vì xóa nó
-                Library:tween(SLIDERVALUE, {TextTransparency = 1}, function()
-                    SLIDERVALUE.Visible = false
-                end)
+                -- Ẩn text hoàn toàn khi ngừng kéo
+                Library:tween(SLIDERVALUE, {TextTransparency = 1})
+                game:GetService("Debris"):AddItem(SLIDERVALUE, 0.2) -- Xóa sau khi animation hoàn thành
                 
                 Library:tween(SLIDERTITLE, {TextColor3 = Library.Colors.ElementInactive})
             end
@@ -2047,6 +2059,7 @@ function section:AddSlider(options)
     
     return slider 
 end
+    
     -- Dropdown element
     function section:AddDropdown(options)
         options = Library:validate({
@@ -2383,7 +2396,6 @@ end
         Library:connection(CHOICEHOLDER.MouseEnter, function()
             List.MouseInside = true
         end)
-
         Library:connection(CHOICEHOLDER.MouseLeave, function()
             List.MouseInside = false
         end)
@@ -2553,5 +2565,4 @@ end
     
     return menu
 end 
-
 return ab.AddWindow()
