@@ -883,18 +883,18 @@ ab.AddWindow = function (options)
             -- Sử dụng hàm này khi tạo SECTION
             local NewPos = calculateNewPosition(options.side, options.tab)
             
-            -- Xử lý height
+            -- Xử lý height - Giới hạn chiều cao của section để tránh quá cao
             local sectionHeight = options.height
             if type(sectionHeight) == "string" then
                 if sectionHeight == "fill" then
-                    sectionHeight = UDim.new(1, -NewPos)
+                    sectionHeight = UDim.new(0, 200) -- Giới hạn chiều cao tối đa
                 elseif sectionHeight == "half" then
-                    sectionHeight = UDim.new(0.5, -NewPos/2)
+                    sectionHeight = UDim.new(0, 100) -- Giới hạn chiều cao tối đa
                 else
                     sectionHeight = UDim.new(0, 200) -- Giá trị mặc định
                 end
             else
-                sectionHeight = UDim.new(0, sectionHeight) -- Nếu là số
+                sectionHeight = UDim.new(0, math.min(sectionHeight, 200)) -- Giới hạn chiều cao tối đa
             end
             
             local SECTION = Library:Create("Frame", {
