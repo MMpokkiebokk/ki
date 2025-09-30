@@ -1,4 +1,4 @@
-game = cloneref(game)
+ game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
@@ -503,37 +503,38 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        local LEFTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "LeftContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = LEFTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingLeft = UDim.new(0,10),
-        })
-        
-        local RIGHTCONTAINER = Library:Create("Frame", {
-            Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -6, 1, 0),
-            AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, 0, 0, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Name = "RightContainer"
-        })
-        
-        Library:Create("UIPadding", {
-            Parent = RIGHTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingRight = UDim.new(0,10),
-        })
+-- Trong hàm tab:AddTab, đảm bảo LEFTCONTAINER và RIGHTCONTAINER được tạo đúng cách
+local LEFTCONTAINER = Library:Create("Frame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "LeftContainer"
+})
+
+Library:Create("UIPadding", {
+    Parent = LEFTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingLeft = UDim.new(0,10),
+})
+
+local RIGHTCONTAINER = Library:Create("Frame", {
+    Parent = CONTENTCONTAINER,
+    Size = UDim2.new(0.5, -6, 1, 0),
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Name = "RightContainer"
+})
+
+Library:Create("UIPadding", {
+    Parent = RIGHTCONTAINER,
+    PaddingTop = UDim.new(0,10),
+    PaddingBottom = UDim.new(0,10),
+    PaddingRight = UDim.new(0,10),
+})
         
         -- Tab functionality
         local function Activate()
@@ -632,7 +633,8 @@ ab.AddWindow = function (options)
                 })
             end
             
-            if not CONTENTCONTAINER:FindFirstChild("SubTabContainer") then
+            if not CONTENTCONTAINER:FindFirstChild("
+            Container") then
                 SUBTABCONTAINER = Library:Create("Frame", {
                     Parent = CONTENTCONTAINER,
                     Size = UDim2.new(1,0,0,20),
@@ -790,10 +792,12 @@ function tab:AddSection(options)
     
     local section = { Hover = false, }
     local NewPos
-    -- Calculate Section Position
-    if options.side == "Left" then
+-- Cập nhật cách tính toán vị trí cho các phần tử
+local function calculateNewPosition(side, tab)
+    local NewPos
+    if side == "Left" then
         if getgenv().subtab then
-            local subtab = options.tab
+            local subtab = tab
             if LeftHeight[subtab] and #LeftHeight[subtab] > 0 then
                 NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + 30
             else
@@ -808,7 +812,7 @@ function tab:AddSection(options)
         end
     else
         if getgenv().subtab then
-            local subtab = options.tab
+            local subtab = tab
             if RightHeight[subtab] and #RightHeight[subtab] > 0 then
                 NewPos = RightHeight[subtab][#RightHeight[subtab]] + 30
             else
@@ -822,14 +826,19 @@ function tab:AddSection(options)
             end
         end
     end
-    local SECTION = Library:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, options.height),
-        AnchorPoint = Vector2.new(0, 0),
-        BackgroundColor3 = Library.Colors.Section,
-        Position = UDim2.new(0, 0, 0, NewPos - 12),
-        BorderSizePixel = 0,
-        Name = options.name
-    })
+    return NewPos
+end
+
+-- Sử dụng hàm này khi tạo SECTION
+local NewPos = calculateNewPosition(options.side, options.tab)
+local SECTION = Library:Create("Frame", {
+    Size = UDim2.new(1, 0, 0, options.height),
+    AnchorPoint = Vector2.new(0, 0),
+    BackgroundColor3 = Library.Colors.Section,
+    Position = UDim2.new(0, 0, 0, NewPos - 12),
+    BorderSizePixel = 0,
+    Name = options.name
+})
     local SECTIONTEXT = Library:Create("TextLabel", {
         Parent = SECTION,
         AnchorPoint = Vector2.new(0.5,0),
@@ -847,56 +856,43 @@ function tab:AddSection(options)
         SECTIONTEXT.Size = UDim2.new(0,SECTIONTEXT.TextBounds.X + 25,0,10) 
     end)
     
-    -- THAY ĐỔI QUAN TRỌNG: Chuyển từ Frame sang ScrollingFrame để có thể cuộn
-    local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
-        Parent = SECTION,
-        Size = UDim2.new(1, 0, 1, -10),
-        Position = UDim2.new(0, 0, 0, 10),
-        BackgroundTransparency = 1,
-        Name = "ElementContainer",
-        CanvasSize = UDim2.new(0, 0, 0, 0), -- Sẽ được cập nhật tự động
-        ScrollBarThickness = 4, -- Hiển thị thanh cuộn
-        ScrollBarImageColor3 = Library.Colors.Accent, -- Màu thanh cuộn
-        BorderSizePixel = 0,
-    })
-    Library:Create("UIListLayout", { 
-        Parent = ELEMENTCONTAINER,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-        Name = "ElementLayout"
-    })
-    
-    -- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
-    local function updateCanvasSize()
-        local UIListLayout = ELEMENTCONTAINER:FindFirstChild("ElementLayout")
-        if UIListLayout then
-            local padding = ELEMENTCONTAINER:FindFirstChild("UIPadding")
-            local topPadding = padding and padding.PaddingTop.Offset or 0
-            local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-            local leftPadding = padding and padding.PaddingLeft.Offset or 0
-            local rightPadding = padding and padding.PaddingRight.Offset or 0
-            
-            ELEMENTCONTAINER.CanvasSize = UDim2.new(
-                0, UIListLayout.AbsoluteContentSize.X + leftPadding + rightPadding,
-                0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding
-            )
-        end
+-- Thay thế phần ELEMENTCONTAINER trong hàm AddSection
+local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
+    Parent = SECTION,
+    Size = UDim2.new(1, 0, 1, -10),
+    Position = UDim2.new(0, 0, 0, 10),
+    BackgroundTransparency = 1,
+    Name = "ElementContainer",
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Library.Colors.Accent,
+    BorderSizePixel = 0,
+    AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Thêm dòng này
+})
+
+-- Thêm sự kiện để cập nhật CanvasSize khi thêm phần tử mới
+local function updateCanvasSize()
+    local UIListLayout = ELEMENTCONTAINER:FindFirstChild("ElementLayout")
+    if UIListLayout then
+        local padding = ELEMENTCONTAINER:FindFirstChild("UIPadding")
+        local topPadding = padding and padding.PaddingTop.Offset or 0
+        local bottomPadding = padding and padding.PaddingBottom.Offset or 0
+        local leftPadding = padding and padding.PaddingLeft.Offset or 0
+        local rightPadding = padding and padding.PaddingRight.Offset or 0
+        
+        ELEMENTCONTAINER.CanvasSize = UDim2.new(
+            0, UIListLayout.AbsoluteContentSize.X + leftPadding + rightPadding,
+            0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding
+        )
     end
-    
-    Library:Create("UIPadding", { 
-        Parent = ELEMENTCONTAINER,
-        PaddingLeft = UDim.new(0,15),
-        PaddingRight = UDim.new(0,15),
-        PaddingTop = UDim.new(0,5),
-        PaddingBottom = UDim.new(0,5),
-    })
-    
-    -- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
-    Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
-        if child:IsA("GuiObject") then
-            updateCanvasSize()
-        end
-    end)
+end
+
+-- Theo dõi khi thêm phần tử mới để cập nhật CanvasSize
+Library:connection(ELEMENTCONTAINER.ChildAdded, function(child)
+    if child:IsA("GuiObject") then
+        updateCanvasSize()
+    end
+end)
     
     local pos = SECTION.Position.Y.Offset
     if options.height == "fill" then
@@ -904,25 +900,30 @@ function tab:AddSection(options)
     elseif options.height == "half" then
         SECTION.Size = UDim2.new(1,0,0.5,-pos/2)
     end
-    -- Handle side picking
-    do
-        if getgenv().subtab and options.side == "Right" then
-            local subtab = options.tab
+
+do
+    if getgenv().subtab then
+        local subtab = options.tab
+        if not LeftHeight[subtab] then LeftHeight[subtab] = {} end
+        if not RightHeight[subtab] then RightHeight[subtab] = {} end
+        
+        if options.side == "Right" then
             SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("RightContainer")
             table.insert(RightHeight[subtab], SECTION.AbsoluteSize.Y)
-        elseif getgenv().subtab then
-            local subtab = options.tab
+        else
             SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("LeftContainer")
             table.insert(LeftHeight[subtab], SECTION.AbsoluteSize.Y)
         end
-        if options.side == "Right" and not getgenv().subtab then
+    else
+        if options.side == "Right" then
             SECTION.Parent = RIGHTCONTAINER
-            table.insert(RightHeight,SECTION.AbsoluteSize.Y)
-        elseif not getgenv().subtab then
+            table.insert(RightHeight, SECTION.AbsoluteSize.Y)
+        else
             SECTION.Parent = LEFTCONTAINER
             table.insert(LeftHeight, SECTION.AbsoluteSize.Y)
         end
     end
+end
     Library:Create("UIStroke", { 
         Parent = SECTION,
         Color = Library.Colors.BorderColor
