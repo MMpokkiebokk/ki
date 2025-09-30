@@ -339,14 +339,20 @@ ab.AddWindow = function (options)
         Color = Library.Colors.BorderColor
     })
     
-    -- Inner container setup
-    local INNERCONTAINER = Library:Create("Frame", {
+    -- Inner container setup - Thay đổi thành ScrollingFrame để có thể cuộn
+    local INNERCONTAINER = Library:Create("ScrollingFrame", {
         Parent = WINDOW,
         Size = UDim2.new(1, -150, 1, -35),
         Position = UDim2.new(0, 140, 0, 28),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Name = "InnerContainer",
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Library.Colors.Accent,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
     Library:Create("UIStroke", { 
@@ -491,7 +497,7 @@ ab.AddWindow = function (options)
             Name = "TabText"
         })
         
-        -- Tab content container
+        -- Tab content container - Giữ nguyên là Frame
         local CONTENTCONTAINER = Library:Create("Frame", {
             Parent = INNERCONTAINER,
             Size = UDim2.new(1, 0, 1, 0),
@@ -503,79 +509,38 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        -- Đổi LEFTCONTAINER và RIGHTCONTAINER thành ScrollingFrame để có thể cuộn
-        local LEFTCONTAINER = Library:Create("ScrollingFrame", {
+        -- Tạo LEFTCONTAINER và RIGHTCONTAINER là Frame bình thường
+        local LEFTCONTAINER = Library:Create("Frame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Name = "LeftContainer",
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 4,
-            ScrollBarImageColor3 = Library.Colors.Accent,
-            ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            Name = "LeftContainer"
         })
         
-        local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
+        Library:Create("UIPadding", {
+            Parent = LEFTCONTAINER,
+            PaddingTop = UDim.new(0,10),
+            PaddingBottom = UDim.new(0,10),
+            PaddingLeft = UDim.new(0,10),
+        })
+        
+        local RIGHTCONTAINER = Library:Create("Frame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, 0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Name = "RightContainer",
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 4,
-            ScrollBarImageColor3 = Library.Colors.Accent,
-            ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            Name = "RightContainer"
         })
         
-        -- Thêm UIListLayout cho cả hai container
-        Library:Create("UIListLayout", { 
-            Parent = LEFTCONTAINER,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-            Name = "LeftLayout"
-        })
-        
-        Library:Create("UIListLayout", { 
+        Library:Create("UIPadding", {
             Parent = RIGHTCONTAINER,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-            Name = "RightLayout"
+            PaddingTop = UDim.new(0,10),
+            PaddingBottom = UDim.new(0,10),
+            PaddingRight = UDim.new(0,10),
         })
-        
-        -- Thêm hàm để cập nhật CanvasSize khi thêm section mới
-        local function updateContainerCanvasSize(container)
-            local layout = container:FindFirstChildOfClass("UIListLayout")
-            if layout then
-                local padding = container:FindFirstChildOfClass("UIPadding")
-                local topPadding = padding and padding.PaddingTop.Offset or 0
-                local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-                
-                container.CanvasSize = UDim2.new(
-                    0, 0,
-                    0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding
-                )
-            end
-        end
-        
-        -- Theo dõi khi thêm section mới để cập nhật CanvasSize
-        Library:connection(LEFTCONTAINER.ChildAdded, function(child)
-            if child:IsA("GuiObject") then
-                updateContainerCanvasSize(LEFTCONTAINER)
-            end
-        end)
-        
-        Library:connection(RIGHTCONTAINER.ChildAdded, function(child)
-            if child:IsA("GuiObject") then
-                updateContainerCanvasSize(RIGHTCONTAINER)
-            end
-        end)
         
         -- Lưu trữ tham chiếu đến các container trong tab
         tab.CONTENTCONTAINER = CONTENTCONTAINER
@@ -1045,6 +1010,34 @@ ab.AddWindow = function (options)
             
             -- Cập nhật kích thước canvas khi khởi tạo
             updateCanvasSize()
+            
+            -- Cập nhật CanvasSize của INNERCONTAINER khi thêm section mới
+            local function updateInnerContainerCanvasSize()
+                local layout = INNERCONTAINER:FindFirstChildOfClass("UIListLayout")
+                if layout then
+                    local padding = INNERCONTAINER:FindFirstChildOfClass("UIPadding")
+                    local topPadding = padding and padding.PaddingTop.Offset or 0
+                    local bottomPadding = padding and padding.PaddingBottom.Offset or 0
+                    
+                    INNERCONTAINER.CanvasSize = UDim2.new(
+                        0, 0,
+                        0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding
+                    )
+                end
+            end
+            
+            -- Thêm UIListLayout cho INNERCONTAINER nếu chưa có
+            if not INNERCONTAINER:FindFirstChildOfClass("UIListLayout") then
+                Library:Create("UIListLayout", { 
+                    Parent = INNERCONTAINER,
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, 0),
+                    Name = "InnerLayout"
+                })
+            end
+            
+            -- Cập nhật CanvasSize khi thêm section mới
+            updateInnerContainerCanvasSize()
             
             -- Button element
             function section:AddButton(options)
