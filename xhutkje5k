@@ -890,8 +890,7 @@ ab.AddWindow = function (options)
                 TextSize = 9,
                 FontFace = Library.Font,
                 Text = options.name,
-                Name = "SectionText",
-                Size = UDim2.new(0, 100, 0, 10), -- Chiều cao cố định cho tên section
+                Name = "SectionText"
             })
             
             Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
@@ -1110,7 +1109,7 @@ ab.AddWindow = function (options)
                 end)
                 
                 Library:connection(BOX:GetPropertyChangedSignal("Text"), function()
-                    -- Không ghi đè lên tên section
+                    -- Không ghi đè lên tên section nữa
                 end)
                 
                 Library:connection(BOX.FocusLost, function(enterPressed)
@@ -1125,13 +1124,14 @@ ab.AddWindow = function (options)
                 return
             end
             
-            -- Slider element
+            -- Slider element - Thêm mới
             function section:AddSlider(options)
                 options = Library:validate({
                     name = "example slider",
                     min = 0,
                     max = 100,
                     default = 50,
+                    decimals = 0, -- Số chữ số thập phân
                     callback = function() end,
                 }, options or {})
                 
@@ -1147,17 +1147,16 @@ ab.AddWindow = function (options)
                     BackgroundTransparency = 1
                 })
                 
-                local SLIDERLABEL = Library:Create("TextLabel", {
+                local SLIDERTITLE = Library:Create("TextLabel", {
                     Parent = SLIDERCONTAINER,
                     Size = UDim2.new(0.5, 0, 1, 0),
-                    Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
                     Text = options.name,
                     FontFace = Library.Font,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    Name = "SliderLabel"
+                    Name = "SliderTitle"
                 })
                 
                 local SLIDERVALUE = Library:Create("TextLabel", {
@@ -1175,7 +1174,7 @@ ab.AddWindow = function (options)
                 
                 local SLIDER = Library:Create("Frame", {
                     Parent = SLIDERCONTAINER,
-                    Size = UDim2.new(1, 0, 0, 2),
+                    Size = UDim2.new(1, 0, 0, 4),
                     Position = UDim2.new(0, 0, 1, -5),
                     BackgroundColor3 = Color3.fromRGB(20, 20, 20),
                     BorderSizePixel = 1,
@@ -1186,7 +1185,6 @@ ab.AddWindow = function (options)
                 local SLIDERFILL = Library:Create("Frame", {
                     Parent = SLIDER,
                     Size = UDim2.new((options.default - options.min) / (options.max - options.min), 0, 1, 0),
-                    Position = UDim2.new(0, 0, 0, 0),
                     BackgroundColor3 = Library.Colors.Accent,
                     BorderSizePixel = 0,
                     Name = "SliderFill"
@@ -1194,17 +1192,12 @@ ab.AddWindow = function (options)
                 
                 local SLIDERCIRCLE = Library:Create("Frame", {
                     Parent = SLIDER,
-                    Size = UDim2.new(0, 10, 0, 10),
-                    Position = UDim2.new((options.default - options.min) / (options.max - options.min), -5, 0.5, -5),
+                    Size = UDim2.new(0, 8, 0, 8),
+                    Position = UDim2.new((options.default - options.min) / (options.max - options.min), -4, 0.5, -4),
                     BackgroundColor3 = Library.Colors.Accent,
                     BorderSizePixel = 1,
                     BorderColor3 = Color3.fromRGB(255, 255, 255),
                     Name = "SliderCircle"
-                })
-                
-                Library:Create("UICorner", {
-                    Parent = SLIDERCIRCLE,
-                    CornerRadius = UDim.new(0, 5)
                 })
                 
                 -- Slider functionality
@@ -1212,24 +1205,25 @@ ab.AddWindow = function (options)
                     local percent = math.clamp((input.Position.X - SLIDER.AbsolutePosition.X) / SLIDER.AbsoluteSize.X, 0, 1)
                     local value = options.min + (options.max - options.min) * percent
                     
-                    -- Cho phép cả số nguyên và số thập phân
+                    -- Làm tròn theo số chữ số thập phân
+                    local multiplier = 10 ^ options.decimals
+                    value = math.floor(value * multiplier + 0.5) / multiplier
+                    
                     slider.Value = value
                     SLIDERFILL.Size = UDim2.new(percent, 0, 1, 0)
-                    SLIDERCIRCLE.Position = UDim2.new(percent, -5, 0.5, -5)
-                    SLIDERVALUE.Text = string.format("%.2f", value)
+                    SLIDERCIRCLE.Position = UDim2.new(percent, -4, 0.5, -4)
+                    SLIDERVALUE.Text = tostring(value)
                     
                     options.callback(value)
                 end
                 
                 Library:connection(SLIDER.MouseEnter, function()
-                    Library:tween(SLIDERLABEL, {TextColor3 = Library.Colors.ElementActive})
-                    Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.ElementActive})
+                    Library:tween(SLIDERCIRCLE, {BackgroundColor3 = Library.Colors.ElementActive})
                 end)
                 
                 Library:connection(SLIDER.MouseLeave, function()
                     if not slider.Dragging then
-                        Library:tween(SLIDERLABEL, {TextColor3 = Library.Colors.ElementInactive})
-                        Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.ElementInactive})
+                        Library:tween(SLIDERCIRCLE, {BackgroundColor3 = Library.Colors.Accent})
                     end
                 end)
                 
@@ -1248,11 +1242,9 @@ ab.AddWindow = function (options)
                         endConnection = Library:connection(_uis.InputEnded, function(input)
                             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                 slider.Dragging = false
+                                Library:tween(SLIDERCIRCLE, {BackgroundColor3 = Library.Colors.Accent})
                                 draggingConnection:Disconnect()
                                 endConnection:Disconnect()
-                                
-                                Library:tween(SLIDERLABEL, {TextColor3 = Library.Colors.ElementInactive})
-                                Library:tween(SLIDERVALUE, {TextColor3 = Library.Colors.ElementInactive})
                             end
                         end)
                     end
@@ -1489,6 +1481,7 @@ ab.AddWindow = function (options)
                             keybind:SetKey(nil)
                         end
                     end)
+                end
                 
                     options.callback(keybind:GetKey())
                 
@@ -1615,211 +1608,464 @@ ab.AddWindow = function (options)
                         PaddingRight = UDim.new(0, 5),
                     })
                     
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    local COPYTEXT = Library:Create("TextLabel", {
+                        Parent = COPY,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        BackgroundTransparency = 1,
+                        TextColor3 = Color3.fromRGB(255,255,255),
+                        TextSize = 9,
+                        Text = "copy",
+                        FontFace = Library.Font,
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                        BorderSizePixel = 0,
+                    })
+                    
+                    local PASTETEXT = Library:Create("TextBox", {
+                        Parent = PASTE,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        BorderSizePixel = 0,
+                        Selectable = false,
+                        FontFace = Library.Font,
+                        TextColor3 = Color3.fromRGB(255,255,255,255),
+                        TextSize = 9,
+                        TextStrokeTransparency = 0,
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    local PASTETEXT = Library:Create("TextBox", {
+                        Parent = PASTE,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        BorderSizePixel = 0,
+                        Selectable = false,
+                        FontFace = Library.Font,
+                        TextColor3 = Color3.fromRGB(255,255,255,255),
+                        TextSize = 9,
+                        TextStrokeTransparency = 0,
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
+                    Library:Create("UIPadding", {
+                        Name = "UIPadding",
+                        Parent = COLORPICKER,
+                        PaddingBottom = UDim.new(0, 5),
+                        PaddingTop = UDim.new(0, 5),
+                        PaddingLeft = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5),
+                    })
+                    
                     local function updateValue(value)
                         options.default = value
                         ELEMENT.BackgroundColor3 = value
+                        PREVIEW.BackgroundColor3 = value
                         local r, g, b = math.round(value.r * 255), math.round(value.g * 255), math.round(value.b * 255)
                         PASTETEXT.Text = tostring(r) .. "," .. tostring(g) .. "," .. tostring(b)
                         absvalue = tostring(r) .. "," .. tostring(g) .. "," .. tostring(b)
                         options.getcolor(value)
+                        
+                        -- Store hue and saturation when value > 0
+                        local h, s, v = Color3.toHSV(value)
+                        if v > 0 then
+                            lastHue = h
+                            lastSaturation = s
+                        end
+                        
+                        -- Update brightness slider position based on value
+                        local brightnessPercent = v
+                        PICKER_TRANSPARENCY.Position = UDim2.new(0, brightnessPercent * TRANSPARENCY.AbsoluteSize.X, 0, 0)
+                        
+                        -- Update hue slider position
+                        local huePercent = h
+                        PICKER_HUE.Position = UDim2.new(0, 0, 0, huePercent * HUE.AbsoluteSize.Y)
                     end
                     
-                    -- Color picker functionality
-                    Library:connection(ELEMENT.MouseEnter, function()
-                        Library:tween(ELEMENT, {BorderColor3 = Library.Colors.Accent})
-                    end)
-                    
-                    Library:connection(ELEMENT.MouseLeave, function()
-                        Library:tween(ELEMENT, {BorderColor3 = Library.Colors.BorderColor})
-                    end)
-                    
-                    Library:connection(ELEMENT.MouseButton1Click, function()
-                        COLORPICKER.Visible = not COLORPICKER.Visible
-                    end)
-                    
-                    return
-                end
-                
-                return toggle
-            end
-            
-            -- List element
-            function section:AddList(options)
-                options = Library:validate({
-                    default = 1,
-                    list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
-                    callback = function(active) end
-                }, options or {})
-                
-                options.default = options.default or 1
-                
-                local List = {
-                    CurrentChoice = nil
-                }
-                
-                local LISTCONTAINER = Library:Create("Frame", {
-                    Parent = ELEMENTCONTAINER,
-                    Size = UDim2.new(1, 0, 0, 100),
-                    Name = options.name,
-                    BorderSizePixel = 1,
-                    BorderColor3 = Color3.fromRGB(255,255,255,255),
-                    BackgroundTransparency = 0,
-                })
-                
-                Library:Create("UIGradient", {
-                    Parent = LISTCONTAINER,
-                    Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
-                    }),
-                    Rotation = 90,
-                })
-                
-                local CHOICEHOLDER = Library:Create("ScrollingFrame", {
-                    Parent = LISTCONTAINER,
-                    Size = UDim2.new(1,0,1,0),
-                    CanvasSize = UDim2.new(0,0,10,0),
-                    BackgroundTransparency = 1,
-                    ScrollBarThickness = 0,
-                })
-                
-                Library:Create("UIListLayout", {
-                    Parent = CHOICEHOLDER,
-                    FillDirection = Enum.FillDirection.Vertical,
-                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                    VerticalAlignment = Enum.VerticalAlignment.Top,
-                    Padding = UDim.new(0, 4),
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Name = "ListLayout"
-                })
-                
-                local TRANSPARENCYEFFECT = Library:Create("Frame",{
-                    Parent = LISTCONTAINER,
-                    Size = UDim2.new(1,0,1,0),
-                    BackgroundColor3 = Color3.fromRGB(0,0,0,0),
-                    BorderSizePixel = 0,
-                    ZIndex = 2,
-                })
-                
-                Library:Create("UIGradient", {
-                    Parent = TRANSPARENCYEFFECT,
-                    Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 1),
-                        NumberSequenceKeypoint.new(0.8, 0.6),
-                        NumberSequenceKeypoint.new(1, 0.6),
-                        NumberSequenceKeypoint.new(1, 1.0),
-                    }),
-                    Rotation = 90
-                })
-                
-                Library:connection(CHOICEHOLDER.MouseEnter, function()
-                    List.MouseInside = true
-                end)
-                Library:connection(CHOICEHOLDER.MouseLeave, function()
-                    List.MouseInside = false
-                end)
-                
-                function List:AddChoice(name)
-                    local CHOICE = Library:Create("Frame", {
-                        Size = UDim2.new(1,-2,0,15),
-                        Parent = CHOICEHOLDER,
-                        AnchorPoint = Vector2.new(0.5,0),
-                        BackgroundTransparency = 1,
-                        BorderSizePixel = 0,
-                        ZIndex = 100,
-                    })
-        
-                    local CHOICETEXT = Library:Create("TextLabel", {
-                        Size = UDim2.new(1,0,1,0),
-                        Parent = CHOICE,
-                        AnchorPoint = Vector2.new(0.5,0),
-                        Position = UDim2.new(0.5,0,0,0),
-                        BackgroundTransparency = 1,
-                        FontFace = Library.Font,
-                        Text = name,
-                        TextColor3 = Library.Colors.ElementInactive,
-                        TextSize = 8,
-                        Name = name,
-                    })
-                    
-                    local CHOICEBAR = Library:Create("Frame", {
-                        Parent = CHOICE,
-                        Size = UDim2.new(0,0,0,1),
-                        AnchorPoint = Vector2.new(0.5,0.5),
-                        Position = UDim2.new(0.5,0,0.5,5),
-                        BackgroundTransparency = 0.5,
-                        BackgroundColor3 = Library.Colors.Accent,
-                        BorderSizePixel = 0,
-                        Name = "SubTabBar"
-                    })
-                    
-                    -- Choice functionality
-                    local choice = {
-                        Name = name,
-                        Hover = false,
-                        Active = false,
-                    }
-                    
-                    if List.CurrentChoice == choice.Name then 
-                        choice.Active = true 
+                    local function updateBrightnessSlider(x)
+                        local offsetX = x - TRANSPARENCY.AbsolutePosition.X
+                        offsetX = math.clamp(offsetX, 0, TRANSPARENCY.AbsoluteSize.X)
+                        local percent = offsetX / TRANSPARENCY.AbsoluteSize.X
+                        PICKER_TRANSPARENCY.Position = UDim2.new(0, offsetX, 0, 0)
+                        
+                        -- Get current color from PREVIEW
+                        local currentColor = PREVIEW.BackgroundColor3 or Color3.new(1, 1, 1)
+                        local h, s, v = Color3.toHSV(currentColor)
+                        -- Store original hue and saturation if value > 0
+                        if v > 0 then
+                            lastHue = h
+                            lastSaturation = s
+                        end
+                        
+                        -- Calculate new value from slider
+                        local newValue = percent
+                        
+                        -- Create new color using original hue and saturation if available
+                        local newColor = Color3.fromHSV(lastHue or h, lastSaturation or s, newValue)
+                        
+                        -- Update color
+                        updateValue(newColor)
                     end
                     
-                    Library:connection(CHOICE.MouseEnter, function()
-                        if List.CurrentChoice ~= choice.Name then
-                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                        end
-                        choice.Hover = true
-                    end)
-                    
-                    Library:connection(CHOICE.MouseLeave, function()
-                        if List.CurrentChoice ~= choice.Name then
-                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                        end
-                        choice.Hover = false
-                    end)
-                    
-                    Library:connection(_uis.InputBegan, function(input)
+                    Library:connection(TRANSPARENCY.InputBegan, function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            if choice.Hover then
-                                List.CurrentChoice = choice.Name
-                                options.callback(choice.Name)
-                                
-                                -- Update all choices
-                                for _, child in pairs(CHOICEHOLDER:GetChildren()) do
-                                    if child:IsA("Frame") then
-                                        local textLabel = child:FindFirstChildOfClass("TextLabel")
-                                        local bar = child:FindFirstChild("SubTabBar")
-                                        
-                                        if textLabel and bar then
-                                            if textLabel.Name == choice.Name then
-                                                Library:tween(textLabel, {TextColor3 = Library.Colors.ElementActive})
-                                                Library:tween(bar, {Size = UDim2.new(0,35,0,1)})
-                                            else
-                                                Library:tween(textLabel, {TextColor3 = Library.Colors.ElementInactive})
-                                                Library:tween(bar, {Size = UDim2.new(0,0,0,1)})
-                                            end
-                                        end
-                                    end
+                            updateBrightnessSlider(input.Position.X)
+                            
+                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                                    updateBrightnessSlider(input.Position.X)
+                                end
+                            end)
+                            
+                            local endConnection
+                            endConnection = Library:connection(_uis.InputEnded, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                    draggingConnection:Disconnect()
+                                    endConnection:Disconnect()
                                 end
                             end
                         end
                     end)
+                    
+                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            updateBrightnessSlider(input.Position.X)
+                            
+                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                                    updateBrightnessSlider(input.Position.X)
+                                end
+                            end
+                            
+                            local endConnection
+                            endConnection = Library:connection(_uis.InputEnded, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                    draggingConnection:Disconnect()
+                                    endConnection:Disconnect()
+                                end
+                            end
+                        end
+                    end)
+                    
+                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            updateBrightnessSlider(input.Position.X)
+                            
+                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                                    updateBrightnessSlider(input.Position.X)
+                                end
+                            end
+                            
+                            local endConnection = Library:connection(_uis.InputEnded, function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                    draggingConnection:Disconnect()
+                                    endConnection:Disconnect()
+                                end
+                            end
+                        end
+                    end)
+                    
+                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            updateBrightnessSlider(input.Position.X)
+                        end
+                    end)
+                    
+                    Library:connection(PICKER_TRANSPARENCY.InputChanged, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                            updateBrightnessSlider(input.Position.X)
+                        end
+                    end
+                    
+                    Library:connection(PICKER_TRANSPARENCY.InputEnded, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            draggingConnection:Disconnect()
+                            endConnection:Disconnect()
+                        end
+                    end)
                 end
                 
-                -- Add default choices
-                for _,v in pairs(options.list) do
-                    List:AddChoice(v)
+                -- List element
+                function section:AddList(options)
+                    options = Library:validate({
+                        default = 1,
+                        list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
+                        callback = function(active) end
+                    }, options or {})
+                    
+                    options.default = options.default or 1
+                    
+                    local List = {
+                        CurrentChoice = nil
+                    }
+                    
+                    local LISTCONTAINER = Library:Create("Frame", {
+                        Parent = ELEMENTCONTAINER,
+                        Size = UDim2.new(1, 0, 0, 100),
+                        Name = options.name,
+                        BorderSizePixel = 1,
+                        BorderColor3 = Color3.fromRGB(255,255,255,255),
+                        BackgroundTransparency = 0,
+                    })
+                    
+                    Library:Create("UIGradient", {
+                        Parent = LISTCONTAINER,
+                        Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+                        Rotation = 90,
+                    })
+                    
+                    local CHOICEHOLDER = Library:Create("ScrollingFrame", {
+                        Parent = LISTCONTAINER,
+                        Size = UDim2.new(1,0,1,0),
+                        CanvasSize = UDim2.new(0,0,10,0),
+                        BackgroundTransparency = 1,
+                        ScrollBarThickness = 0,
+                    })
+                    
+                    Library:Create("UIListLayout", {
+                        Parent = CHOICEHOLDER,
+                        FillDirection = Enum.FillDirection.Vertical,
+                        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                        VerticalAlignment = Enum.VerticalAlignment.Top,
+                        Padding = UDim.new(0, 4),
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Name = "ListLayout"
+                    })
+                    
+                    local TRANSPARENCYEFFECT = Library:Create("Frame",{
+                        Parent = LISTCONTAINER,
+                        Size = UDim2.new(1,0,1,0,0),
+                        BackgroundColor3 = Color3.fromRGB(0,0,0,0),
+                        BorderSizePixel = 0,
+                        ZIndex = 2,
+                    })
+                    
+                    Library:Create("UIGradient", {
+                        Parent = TRANSPARENCYEFFECT,
+                        Transparency = NumberSequence.new({
+                            NumberSequenceKeypoint.new(0, 1),
+                            NumberSequenceKeypoint.new(0.8, 0.6),
+                            NumberSequenceKeypoint.new(1, 0.6),
+                            NumberSequenceKeypoint.new(1, 1.0),
+                        }),
+                        Rotation = 90
+                    })
+                    
+                    Library:connection(CHOICEHOLDER.MouseEnter, function()
+                        List.MouseInside = true
+                    end)
+                    Library:connection(CHOICEHOLDER.MouseLeave, function()
+                        List.MouseInside = false
+                    end)
+                    
+                    function List:AddChoice(name)
+                        local CHOICE = Library:Create("Frame", {
+                            Size = UDim2.new(1,-2,0,15),
+                            Parent = CHOICEHOLDER,
+                            AnchorPoint = Vector2.new(0.5,0),
+                            BackgroundTransparency = 1,
+                            BorderSizePixel = 0,
+                            ZIndex = 100,
+                        })
+            
+                        local CHOICETEXT = Library:Create("TextLabel", {
+                            Size = UDim2.new(1,0,1,0),
+                            Parent = CHOICE,
+                            AnchorPoint = Vector2.new(0.5,0),
+                            Position = UDim2.new(0.5,0,0,0),
+                            BackgroundTransparency = 1,
+                            FontFace = Library.Font,
+                            Text = name,
+                            TextColor3 = Library.Colors.ElementInactive,
+                            TextSize = 8,
+                            Name = name,
+                        })
+                        
+                        local CHOICEBAR = Library:Create("Frame", {
+                            Parent = CHOICE,
+                            Size = UDim2.new(0,0,0,1),
+                            AnchorPoint = Vector2.new(0.5,0.5),
+                            Position = UDim2.new(0.5,0,0.5,5),
+                            BackgroundTransparency = 0.5,
+                            BackgroundColor3 = Library.Colors.Accent,
+                            BorderSizePixel = 0,
+                            Name = "SubTabBar"
+                        })
+                        
+                        -- Choice functionality
+                        local choice = {
+                            Name = name,
+                            Hover = false,
+                            Active = false,
+                        }
+                        
+                        if List.CurrentChoice == choice.Name then 
+                            choice.Active = true 
+                        end
+                        
+                        Library:connection(CHOICE.MouseEnter, function()
+                            if List.CurrentChoice ~= choice.Name then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                            end
+                            choice.Hover = true
+                        end)
+                        
+                        Library:connection(_uis.InputBegan, function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                if choice.Hover then
+                                    List.CurrentChoice = choice.Name
+                                    Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
+                                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                                    options.callback(choice.Name)
+                                end
+                            end
+                        end)
+                        
+                        Library:connection(_uis.InputEnded, function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                if choice.Hover then
+                                    Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
+                                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                                end
+                            end
+                        end)
+                    end
+                    
+                    -- Add default choices
+                    for _,v in pairs(options.list) do
+                        List:AddChoice(v)
+                    end
+                    
+                    return List
                 end
                 
-                return List
+                return section
             end
             
-            return section
+            return tab
         end
         
-        return tab
+        return menu
     end
     
     -- Developer tools
@@ -1871,7 +2117,7 @@ ab.AddWindow = function (options)
             WINDOW.Position = UDim2.new(startPos.Scale, newX, startPos.Y.Scale, newY)
         end
     
-        Library:connection(TOPBAR.InputBegan, function(input)
+        Library:connection(INNERCONTAINER.InputBegan, function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 if not _G.isDraggingSlider then
                     dragging = true
@@ -1882,7 +2128,7 @@ ab.AddWindow = function (options)
             end
         end)
     
-        Library:connection(_uis.InputChanged, function(input)
+    Library:connection(_uis.InputChanged, function(input)
             if dragging and input == dragInput and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 updateInput(input)
             end
