@@ -339,20 +339,14 @@ ab.AddWindow = function (options)
         Color = Library.Colors.BorderColor
     })
     
-    -- Inner container setup - Thay đổi thành ScrollingFrame để có thể cuộn
-    local INNERCONTAINER = Library:Create("ScrollingFrame", {
+    -- Inner container setup
+    local INNERCONTAINER = Library:Create("Frame", {
         Parent = WINDOW,
         Size = UDim2.new(1, -150, 1, -35),
         Position = UDim2.new(0, 140, 0, 28),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Name = "InnerContainer",
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 4,
-        ScrollBarImageColor3 = Library.Colors.Accent,
-        ScrollingDirection = Enum.ScrollingDirection.Y,
-        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
     Library:Create("UIStroke", { 
@@ -497,7 +491,7 @@ ab.AddWindow = function (options)
             Name = "TabText"
         })
         
-        -- Tab content container - Giữ nguyên là Frame
+        -- Tab content container
         local CONTENTCONTAINER = Library:Create("Frame", {
             Parent = INNERCONTAINER,
             Size = UDim2.new(1, 0, 1, 0),
@@ -509,7 +503,7 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
-        -- Tạo LEFTCONTAINER và RIGHTCONTAINER là Frame bình thường
+        -- Trong hàm tab:AddTab, đảm bảo LEFTCONTAINER và RIGHTCONTAINER được tạo đúng cách
         local LEFTCONTAINER = Library:Create("Frame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
@@ -559,15 +553,15 @@ ab.AddWindow = function (options)
             menu.CurrentTab = TAB
         end
         
-        local function switchTab(tab_instance)
+        local function switchTab(tab)
             Library:tween(TABTEXT, {TextColor3 = Library.Colors.TabActive})
             Library:tween(TAB_OVERLAY, {BackgroundTransparency = 0})
             for _, content in pairs(TABCONTAINER:GetChildren()) do
-                if content:IsA("Frame") and content.Name ~= tab_instance.Name then
+                if content:IsA("Frame") and content.Name ~= tab.Name then
                     deactivate(content)
                 end
             end
-            Activate()
+            Activate(tab)
         end
         
         Library:connection(TAB.MouseEnter, function()
@@ -584,8 +578,8 @@ ab.AddWindow = function (options)
                 if menu.CurrentTab ~= TAB then 
                     Library:tween(TABTEXT, {TextColor3 = Library.Colors.TabInactive}) 
                 end
-                input:Disconnect()
-                leave:Disconnect()
+                input:disconnect()
+                leave:disconnect()
             end)
         end)
         
@@ -616,8 +610,33 @@ ab.AddWindow = function (options)
                 name = "preview",
             }, options or {})
             
-            local subtab = {CurrentTab = nil}
+            local tab = {CurrentTab = nil}
             getgenv().subtab = true
+            local SUBLEFTCONTAINER  = LEFTCONTAINER:Clone()
+            local SUBRIGHTCONTAINER = RIGHTCONTAINER:Clone()
+        
+            if LEFTCONTAINER and RIGHTCONTAINER then
+                LEFTCONTAINER:Destroy()
+                RIGHTCONTAINER:Destroy()
+            end
+            
+            if not SUBLEFTCONTAINER:FindFirstChild("UIPadding") then
+                Library:Create("UIPadding", {
+                    Parent = SUBLEFTCONTAINER,
+                    PaddingTop = UDim.new(0,10),
+                    PaddingBottom = UDim.new(0,10),
+                    PaddingLeft = UDim.new(0,10),
+                })
+            end
+            
+            if not SUBRIGHTCONTAINER:FindFirstChild("UIPadding") then
+                Library:Create("UIPadding", {
+                    Parent = SUBRIGHTCONTAINER,
+                    PaddingTop = UDim.new(0,10),
+                    PaddingBottom = UDim.new(0,10),
+                    PaddingRight = UDim.new(0,10),
+                })
+            end
             
             if not CONTENTCONTAINER:FindFirstChild("SubTabContainer") then
                 SUBTABCONTAINER = Library:Create("Frame", {
@@ -642,8 +661,8 @@ ab.AddWindow = function (options)
                     Parent = SUBTABCONTAINER,
                     Color = ColorSequence.new{
                         ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
-                        ColorSequenceKeypoint.new(0.7, Library.Colors.Section),
-                        ColorSequenceKeypoint.new(1, Library.Colors.Section)
+                        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(Library.Colors.Section.R, Library.Colors.Section.G, Library.Colors.Section.B)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(Library.Colors.Section.R, Library.Colors.Section.G, Library.Colors.Section.B))
                     },
                     Transparency = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 0),
@@ -665,15 +684,15 @@ ab.AddWindow = function (options)
             -- Fit tabs in container
             do
                 local tabCount = 0
-                for _, subtab_frame in ipairs(SUBTABCONTAINER:GetChildren()) do
-                    if subtab_frame:IsA("Frame") then
+                for _, subtab in ipairs(SUBTABCONTAINER:GetChildren()) do
+                    if subtab:IsA("Frame") then
                         tabCount = tabCount + 1
                     end
                 end
                 local finalValue = math.round(SUBTABCONTAINER.AbsoluteSize.X / tabCount)
-                for _, subtab_frame in ipairs(SUBTABCONTAINER:GetChildren()) do
-                    if subtab_frame:IsA("Frame") then
-                        subtab_frame.Size = UDim2.new(0, finalValue, 1, 0)
+                for _, subtab in ipairs(SUBTABCONTAINER:GetChildren()) do
+                    if subtab:IsA("Frame") then
+                        subtab.Size = UDim2.new(0, finalValue, 1, 0)
                     end
                 end
             end
@@ -710,76 +729,10 @@ ab.AddWindow = function (options)
                 Name = options.name
             })
             
-            -- Tạo ScrollingFrame cho sub-tab container
-            local SUBLEFTCONTAINER = Library:Create("ScrollingFrame", {
-                Parent = SUBCONTENTCONTAINER,
-                Size = UDim2.new(0.5, -6, 1, 0),
-                BackgroundTransparency = 1,
-                BorderSizePixel = 0,
-                Name = "LeftContainer",
-                CanvasSize = UDim2.new(0, 0, 0, 0),
-                ScrollBarThickness = 4,
-                ScrollBarImageColor3 = Library.Colors.Accent,
-                ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            })
-            
-            local SUBRIGHTCONTAINER = Library:Create("ScrollingFrame", {
-                Parent = SUBCONTENTCONTAINER,
-                Size = UDim2.new(0.5, -6, 1, 0),
-                AnchorPoint = Vector2.new(1, 0),
-                Position = UDim2.new(1, 0, 0, 0),
-                BackgroundTransparency = 1,
-                BorderSizePixel = 0,
-                Name = "RightContainer",
-                CanvasSize = UDim2.new(0, 0, 0, 0),
-                ScrollBarThickness = 4,
-                ScrollBarImageColor3 = Library.Colors.Accent,
-                ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            })
-
-            Library:Create("UIListLayout", { 
-                Parent = SUBLEFTCONTAINER,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 8),
-                Name = "LeftLayout"
-            })
-            
-            Library:Create("UIListLayout", { 
-                Parent = SUBRIGHTCONTAINER,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 8),
-                Name = "RightLayout"
-            })
-
-            local function updateSubContainerCanvasSize(container)
-                local layout = container:FindFirstChildOfClass("UIListLayout")
-                if layout then
-                    local padding = container:FindFirstChildOfClass("UIPadding")
-                    local topPadding = padding and padding.PaddingTop.Offset or 0
-                    local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-                    
-                    container.CanvasSize = UDim2.new(
-                        0, 0,
-                        0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding
-                    )
-                end
-            end
-
-            Library:connection(SUBLEFTCONTAINER.ChildAdded, function(child)
-                if child:IsA("GuiObject") then
-                    updateSubContainerCanvasSize(SUBLEFTCONTAINER)
-                end
-            end)
-            
-            Library:connection(SUBRIGHTCONTAINER.ChildAdded, function(child)
-                if child:IsA("GuiObject") then
-                    updateSubContainerCanvasSize(SUBRIGHTCONTAINER)
-                end
-            end)
+            local LEFTCONTAINER = SUBLEFTCONTAINER
+            local RIGHTCONTAINER = SUBRIGHTCONTAINER
+            LEFTCONTAINER.Parent = SUBCONTENTCONTAINER
+            RIGHTCONTAINER.Parent = SUBCONTENTCONTAINER
         
             LeftHeight[options.name] = {}
             RightHeight[options.name] = {}
@@ -791,22 +744,22 @@ ab.AddWindow = function (options)
                 
                     Library:tween(SUBTABTEXT, {TextColor3 = Library.Colors.TabActive})
                     Library:tween(SUBTABBAR, {BackgroundTransparency = 0})
-                    subtab.CurrentTab = SUBTAB
+                    tab.CurrentTab = SUBTAB
                 end
                 
-                local function switchTab(subtab_instance)
+                local function switchTab(subtab)
                     Library:tween(SUBTABTEXT, {TextColor3 = Library.Colors.TabActive})
                     Library:tween(SUBTABBAR, {BackgroundTransparency = 0})
                     for _, content in pairs(SUBTABCONTAINER:GetChildren()) do
-                        if content:IsA("Frame") and content.Name ~= subtab_instance.Name then
+                        if content:IsA("Frame") and content.Name ~= subtab.Name then
                             subdeactivate(content)
                         end
                     end
-                    Activate()
+                    Activate(subtab)
                 end
         
                 Library:connection(SUBTAB.MouseEnter, function()
-                    if subtab.CurrentTab ~= SUBTAB then 
+                    if tab.CurrentTab ~= SUBTAB then 
                         Library:tween(SUBTABTEXT, {TextColor3 = Library.Colors.TabActive}) 
                     end
                     local input = Library:connection(_uis.InputBegan, function(key)
@@ -816,20 +769,20 @@ ab.AddWindow = function (options)
                     end)
                     local leave
                     leave = Library:connection(SUBTAB.MouseLeave, function()
-                        if subtab.CurrentTab ~= SUBTAB then 
+                        if tab.CurrentTab ~= SUBTAB then 
                             Library:tween(SUBTABTEXT, {TextColor3 = Library.Colors.TabInactive}) 
                         end
-                        input:Disconnect()
-                        leave:Disconnect()
+                        input:disconnect()
+                        leave:disconnect()
                     end)
                 end)
         
-                if subtab.CurrentTab == nil then
+                if tab.CurrentTab == nil then
                     switchTab(SUBTAB)
                 end
             end
         
-            return subtab
+            return tab
         end
         
         -- Thay đổi phần AddSection trong function tab:AddSection
@@ -844,11 +797,11 @@ ab.AddWindow = function (options)
             local section = { Hover = false, }
             
             -- Cập nhật cách tính toán vị trí cho các phần tử
-            local function calculateNewPosition(side, tab_name)
+            local function calculateNewPosition(side, tab)
                 local NewPos
                 if side == "Left" then
                     if getgenv().subtab then
-                        local subtab = tab_name or "default"
+                        local subtab = tab or "default"
                         if LeftHeight[subtab] and #LeftHeight[subtab] > 0 then
                             NewPos = LeftHeight[subtab][#LeftHeight[subtab]] + 30
                         else
@@ -863,7 +816,7 @@ ab.AddWindow = function (options)
                     end
                 else
                     if getgenv().subtab then
-                        local subtab = tab_name or "default"
+                        local subtab = tab or "default"
                         if RightHeight[subtab] and #RightHeight[subtab] > 0 then
                             NewPos = RightHeight[subtab][#RightHeight[subtab]] + 30
                         else
@@ -934,9 +887,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 BorderSizePixel = 0,
-                ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Thêm dòng này
             })
             
             Library:Create("UIListLayout", { 
@@ -981,16 +932,16 @@ ab.AddWindow = function (options)
             -- Xử lý side picking
             do
                 if getgenv().subtab then
-                    local subtab_name = options.tab or "default"
-                    if not LeftHeight[subtab_name] then LeftHeight[subtab_name] = {} end
-                    if not RightHeight[subtab_name] then RightHeight[subtab_name] = {} end
+                    local subtab = options.tab or "default"
+                    if not LeftHeight[subtab] then LeftHeight[subtab] = {} end
+                    if not RightHeight[subtab] then RightHeight[subtab] = {} end
                     
                     if options.side == "Right" then
-                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("RightContainer")
-                        table.insert(RightHeight[subtab_name], SECTION.AbsoluteSize.Y)
+                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("RightContainer")
+                        table.insert(RightHeight[subtab], SECTION.AbsoluteSize.Y)
                     else
-                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("LeftContainer")
-                        table.insert(LeftHeight[subtab_name], SECTION.AbsoluteSize.Y)
+                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab):FindFirstChild("LeftContainer")
+                        table.insert(LeftHeight[subtab], SECTION.AbsoluteSize.Y)
                     end
                 else
                     if options.side == "Right" then
@@ -1010,34 +961,6 @@ ab.AddWindow = function (options)
             
             -- Cập nhật kích thước canvas khi khởi tạo
             updateCanvasSize()
-            
-            -- Cập nhật CanvasSize của INNERCONTAINER khi thêm section mới
-            local function updateInnerContainerCanvasSize()
-                local layout = INNERCONTAINER:FindFirstChildOfClass("UIListLayout")
-                if layout then
-                    local padding = INNERCONTAINER:FindFirstChildOfClass("UIPadding")
-                    local topPadding = padding and padding.PaddingTop.Offset or 0
-                    local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-                    
-                    INNERCONTAINER.CanvasSize = UDim2.new(
-                        0, 0,
-                        0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding
-                    )
-                end
-            end
-            
-            -- Thêm UIListLayout cho INNERCONTAINER nếu chưa có
-            if not INNERCONTAINER:FindFirstChildOfClass("UIListLayout") then
-                Library:Create("UIListLayout", { 
-                    Parent = INNERCONTAINER,
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 0),
-                    Name = "InnerLayout"
-                })
-            end
-            
-            -- Cập nhật CanvasSize khi thêm section mới
-            updateInnerContainerCanvasSize()
             
             -- Button element
             function section:AddButton(options)
@@ -2552,7 +2475,7 @@ ab.AddWindow = function (options)
                         Active = false,
                     }
                     
-                    if List.CurrentChoice == choice.Name then 
+                    if List[options.default] == choice.Name then 
                         choice.Active = true 
                     end
                     
