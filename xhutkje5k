@@ -25,7 +25,7 @@ local Library = {
     },
     Instances = {},
     Connections = {},
-    Font = nil,
+    Font = Font.new("rbxasset://fonts/families/SourceSansPro.json"), -- Khởi tạo font mặc định
 }
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
@@ -86,6 +86,7 @@ function Library:unload()
     end
 end
 function Library:tween(object, goal, callback)
+    if not object then return end -- Kiểm tra đối tượng tồn tại
     local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
     if callback then
         tween.Completed:Connect(callback)
@@ -122,7 +123,6 @@ local dropdownindex = 50
 ab.AddWindow = function (options)
     local options = options or {}
     options = Library:validate({
-        -- SỬA LỖI: Sửa lỗi truy cập màu G và B
         name = string.format('<font color="rgb(%d, %d, %d)">Funny.KM</font> | @Kdyriz', Library.Colors.Accent.R * 255, Library.Colors.Accent.G * 255, Library.Colors.Accent.B * 255),
         size = UDim2.new(0, 625, 0, 400),
         WaterMark = {
@@ -140,6 +140,7 @@ ab.AddWindow = function (options)
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Name = options.name
     }, true)
+    
     -- Watermark setup
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
@@ -182,7 +183,6 @@ ab.AddWindow = function (options)
     local WINDOW = Library:Create("Frame", {
         Parent = SCREENGUI,
         Size = options.size,
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, -100, 0.5, 0),
         BackgroundColor3 = Library.Colors.Window,
@@ -217,7 +217,6 @@ ab.AddWindow = function (options)
     local WINDOW_OUTLINE = Library:Create("Frame", {
         Parent = WINDOW,
         Size = UDim2.new(1,-2,1,-2),
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         BackgroundTransparency = 1,
@@ -258,7 +257,6 @@ ab.AddWindow = function (options)
         BorderSizePixel = 0,
         Size = UDim2.new(1,4,0,1),
         Position = UDim2.new(0.5,0,1,1),
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(0.5,1),
     })
     
@@ -268,7 +266,6 @@ ab.AddWindow = function (options)
         BorderSizePixel = 0,
         Size = UDim2.new(1,4,1,0),
         Position = UDim2.new(0.5,0,1,2),
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(0.5,1),
         ZIndex = 2
     })
@@ -301,7 +298,6 @@ ab.AddWindow = function (options)
         Parent = TOPBAR,
         Size = UDim2.new(0, 0, 1, 0),
         Position = UDim2.new(1,-6,0,0.5,0.5),
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(1,0.5),
         TextColor3 = Library.Colors.TopText,
         BorderSizePixel = 0,
@@ -319,7 +315,6 @@ ab.AddWindow = function (options)
         BackgroundTransparency = 1,
         Size = UDim2.new(0,120,1,-35),
         Position = UDim2.new(0,10,0.5,10),
-        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
         AnchorPoint = Vector2.new(0,0.5),
         Name = "TabContainer"
     })
@@ -377,6 +372,7 @@ ab.AddWindow = function (options)
     
     -- Tab deactivation function
     local function deactivate(tab)
+        if not tab or not tab.TabText or not tab.TabBar or not tab.TabOverlay then return end -- Kiểm tra đối tượng tồn tại
         for _, content in ipairs(INNERCONTAINER:GetChildren()) do
             if content.Name == tab.Name then
                 content.Visible = false
@@ -440,14 +436,18 @@ ab.AddWindow = function (options)
     end
     
     function Library:ToggleWatermark(visible)
-        WATERMARK_FRAME.Visible = visible
+        if WATERMARK_FRAME then
+            WATERMARK_FRAME.Visible = visible
+        end
     end
     
     Library:connection(game:GetService("RunService").RenderStepped, function()
         local now = os.clock()
         if now - watermarkLastUpdate >= watermarkTick then
             watermarkLastUpdate = now
-            WATERMARK_TEXT.Text = Library:WatermarkTextTriggers(watermarkContent)
+            if WATERMARK_TEXT then
+                WATERMARK_TEXT.Text = Library:WatermarkTextTriggers(watermarkContent)
+            end
         end
         if options.WaterMark.Enabled then 
             Library:ToggleWatermark(true)
@@ -493,7 +493,6 @@ ab.AddWindow = function (options)
             BackgroundColor3 = Library.Colors.Accent,
             Size = UDim2.new(0,1,1,0),
             Position = UDim2.new(0,0,0.5,0),
-            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
             AnchorPoint = Vector2.new(0,0.5),
             Name = "TabBar"
         })
@@ -503,7 +502,6 @@ ab.AddWindow = function (options)
             BackgroundTransparency = 1,
             Size = UDim2.new(1,-12,1,0),
             Position = UDim2.new(0,12,0.5,0),
-            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
             AnchorPoint = Vector2.new(0,0.5),
             TextColor3 = Library.Colors.TabInactive,
             FontFace = Library.Font,
@@ -513,11 +511,15 @@ ab.AddWindow = function (options)
             Name = "TabText"
         })
         
+        -- Lưu trữ tham chiếu đến các thành phần của tab
+        tab.TabText = TABTEXT
+        tab.TabBar = TABBAR
+        tab.TabOverlay = TAB_OVERLAY
+        
         -- Tab content container - Frame
         local CONTENTCONTAINER = Library:Create("Frame", {
             Parent = INNERCONTAINER,
             Size = UDim2.new(1, 0, 1, 0),
-            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.new(0.5, 0, 0.5, 0),
             BackgroundTransparency = 1,
@@ -545,7 +547,6 @@ ab.AddWindow = function (options)
         local RIGHTCONTAINER = Library:Create("Frame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
-            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, 0, 0, 0),
             BackgroundTransparency = 1,
@@ -634,10 +635,13 @@ ab.AddWindow = function (options)
         getgenv().subtab = false
         
         local function subdeactivate(subtab)
+            if not subtab or not subtab.SubTabText or not subtab.SubTabBar then return end -- Kiểm tra đối tượng tồn tại
             local ContentContainer = INNERCONTAINER[subtab.Parent.Parent.Name]
-            for _, content in ipairs(ContentContainer:GetChildren()) do
-                if content.Name == subtab.Name then
-                    content.Visible = false
+            if ContentContainer then
+                for _, content in ipairs(ContentContainer:GetChildren()) do
+                    if content.Name == subtab.Name then
+                        content.Visible = false
+                    end
                 end
             end
             Library:tween(subtab.SubTabText, {TextColor3 = Library.Colors.TabInactive})
@@ -721,18 +725,23 @@ ab.AddWindow = function (options)
                 Text = options.name,
                 Name = "SubTabText"
             })
+            
+            -- Lưu trữ tham chiếu đến các thành phần của sub-tab
+            subtab.SubTabText = SUBTABTEXT
         
             local SUBTABBAR = Library:Create("Frame", {
                 Parent = SUBTAB,
                 BackgroundColor3 = Library.Colors.Accent,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
-                -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                 AnchorPoint = Vector2.new(0.5,1),
                 Position = UDim2.new(0.5,0,1,2),
                 Size = UDim2.new(1,0,0,1),
                 Name = "SubTabBar"
             })
+            
+            -- Lưu trữ tham chiếu đến các thành phần của sub-tab
+            subtab.SubTabBar = SUBTABBAR
         
             -- Sub-tab content container
             local SUBCONTENTCONTAINER = Library:Create("Frame", {
@@ -762,7 +771,6 @@ ab.AddWindow = function (options)
             local SUBRIGHTCONTAINER = Library:Create("ScrollingFrame", {
                 Parent = SUBCONTENTCONTAINER,
                 Size = UDim2.new(0.5, -6, 1, 0),
-                -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                 AnchorPoint = Vector2.new(1, 0),
                 Position = UDim2.new(1, 0, 0, 0),
                 BackgroundTransparency = 1,
@@ -805,7 +813,6 @@ ab.AddWindow = function (options)
                     )
                 end
             end
-            -- SỬA LỖI: Xóa dòng end thừa
 
             Library:connection(SUBLEFTCONTAINER.ChildAdded, function(child)
                 if child:IsA("GuiObject") then
@@ -896,7 +903,6 @@ ab.AddWindow = function (options)
             
             local SECTIONTEXT = Library:Create("TextLabel", {
                 Parent = SECTION,
-                -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                 AnchorPoint = Vector2.new(0.5,0),
                 Position = UDim2.new(0.5,0,0,-6),
                 BackgroundColor3 = Library.Colors.Section,
@@ -1293,7 +1299,6 @@ ab.AddWindow = function (options)
                     Parent = TOGGLECONTAINER,
                     Size = UDim2.new(0,9,0,9),
                     BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-                    -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                     AnchorPoint = Vector2.new(0, 0.5),
                     Position = UDim2.new(0, 0, 0.5, 0),
                     Name = "Toggle",
@@ -1319,7 +1324,6 @@ ab.AddWindow = function (options)
                 
                 local TOGGLETITLE = Library:Create("TextLabel", {
                     Parent = TOGGLECONTAINER,
-                    -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                     AnchorPoint = Vector2.new(0, 0.5),
                     Position = UDim2.new(0, 20, 0, 7),
                     BackgroundTransparency = 1,
@@ -1505,421 +1509,6 @@ ab.AddWindow = function (options)
                     return keybind
                 end
                 
-                -- Color picker functionality for toggle
-                local TweenService = game:GetService("TweenService")
-                function toggle:AddColorpicker(options)
-                    options = Library:validate({
-                        default = Color3.fromRGB(255,255,255,255),
-                        getcolor = function() end,
-                        gettransparency = function() end
-                    }, options or {})
-                
-                    local ELEMENT = Library:Create("Frame", {
-                        Name = "element",
-                        Parent = SUBELEMENTHOLDER,
-                        Size = UDim2.new(0, 22, 0, 12),
-                        BorderColor3 = Library.Colors.BorderColor,
-                        BorderSizePixel = 1,
-                    })
-                    
-                    Library:Create("UIGradient", {
-                        Name = "UIGradient",
-                        Parent = ELEMENT,
-                        Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
-                        }),
-                        Rotation = 90
-                    })
-                
-                    local COLORPICKER = Library:Create("Frame", {
-                        Name = "colorpicker",
-                        Parent = TOGGLECONTAINER,
-                        Size = UDim2.new(0, 200, 0, 200),
-                        Visible = false,
-                        BorderColor3 = Color3.fromRGB(0, 0, 0),
-                        Position = UDim2.new(0, -360, 0, -150),
-                        BorderSizePixel = 2,
-                        BackgroundColor3 = Library.Colors.Window,
-                    })
-                    
-                    local BRIGHTNESS = Library:Create("Frame", {
-                        Name = "brightness",
-                        Parent = COLORPICKER,
-                        Size = UDim2.new(1, -20, 1, -20),
-                        BorderColor3 = Color3.fromRGB(0, 0, 0),
-                        BorderSizePixel = 2,
-                    })
-                    
-                    local IMAGELABEL = Library:Create("ImageLabel", {
-                        Name = "ImageLabel",
-                        Parent = BRIGHTNESS,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BorderColor3 = Color3.fromRGB(0, 0, 0),
-                        BackgroundTransparency = 1,
-                        BorderSizePixel = 0,
-                        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                        Image = "rbxassetid://2615689005"
-                    })
-                    
-                    local PICKER_BRIGHTNESS = Library:Create("ImageLabel", {
-                        Name = "picker",
-                        Parent = BRIGHTNESS,
-                        Size = UDim2.new(0, 10, 0, 10),
-                        BorderColor3 = Color3.fromRGB(0, 0, 0),
-                        BackgroundTransparency = 1,
-                        BorderSizePixel = 2,
-                        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                        Image = "rbxassetid://18268646065",
-                        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
-                        AnchorPoint = Vector2.new(0.5, 0.5)
-                    })
-                    
-                    local COPY = Library:Create("Frame", {
-                        Parent = COLORPICKER,
-                        BackgroundColor3 = Library.Colors.Window,
-                        Size = UDim2.new(0.5, -1, 0, 14),
-                        Position = UDim2.new(0, -6, 0, -23),
-                        BorderSizePixel = 0
-                    })
-                    
-                    local COPYTEXT = Library:Create("TextLabel", {
-                        Parent = COPY,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BackgroundTransparency = 1,
-                        TextColor3 = Color3.fromRGB(255,255,255),
-                        TextSize = 9,
-                        Text = "copy",
-                        FontFace = Library.Font,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                        BorderSizePixel = 0
-                    })
-                    
-                    local PASTE = Library:Create("Frame", {
-                        Parent = COPY,
-                        BackgroundColor3 = Library.Colors.Window,
-                        Size = UDim2.new(0.5, -1, 0, 14),
-                        Position = UDim2.new(1, 6, 0, -23),
-                        -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
-                        AnchorPoint = Vector2.new(1, 0),
-                        BorderSizePixel = 0,
-                    })
-                    
-                    local PASTETEXT = Library:Create("TextBox", {
-                        Parent = PASTE,
-                        BackgroundTransparency = 1,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BorderSizePixel = 0,
-                        Selectable = false,
-                        FontFace = Library.Font,
-                        TextColor3 = Color3.fromRGB(255,255,255,255),
-                        TextSize = 9,
-                        TextStrokeTransparency = 0,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    local COPYTEXT = Library:Create("TextLabel", {
-                        Parent = COPY,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BackgroundTransparency = 1,
-                        TextColor3 = Color3.fromRGB(255,255,255),
-                        TextSize = 9,
-                        Text = "copy",
-                        FontFace = Library.Font,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                        BorderSizePixel = 0,
-                    })
-                    
-                    local PASTETEXT = Library:Create("TextBox", {
-                        Parent = PASTE,
-                        BackgroundTransparency = 1,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BorderSizePixel = 0,
-                        Selectable = false,
-                        FontFace = Library.Font,
-                        TextColor3 = Color3.fromRGB(255,255,255,255),
-                        TextSize = 9,
-                        TextStrokeTransparency = 0,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    local PASTETEXT = Library:Create("TextBox", {
-                        Parent = PASTE,
-                        BackgroundTransparency = 1,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        BorderSizePixel = 0,
-                        Selectable = false,
-                        FontFace = Library.Font,
-                        TextColor3 = Color3.fromRGB(255,255,255,255),
-                        TextSize = 9,
-                        TextStrokeTransparency = 0,
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        -- SỬA LỖI: Sửa lỗi Udim.new thành UDim.new
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    Library:Create("UIPadding", {
-                        Name = "UIPadding",
-                        Parent = COLORPICKER,
-                        PaddingBottom = UDim.new(0, 5),
-                        PaddingTop = UDim.new(0, 5),
-                        PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
-                    })
-                    
-                    --[[
-                    VÙNG COLOR PICKER BỊ VÔ HIỆU HÓA DO THAM CHIẾU ĐẾN CÁC BIẾN NIL
-                    Các biến như TRANSPARENCY, PICKER_TRANSPARENCY, HUE, PICKER_HUE không được định nghĩa
-                    gây ra lỗi nil khi hàm updateValue được gọi.
-                    Để sửa lỗi này, cần phải triển khai đầy đủ các thành phần của color picker.
-                    Tạm thời comment lại để không ảnh hưởng đến các phần khác.
-                    ]]
-                    --[[ local function updateValue(value)
-                        options.default = value
-                        ELEMENT.BackgroundColor3 = value
-                        PREVIEW.BackgroundColor3 = value
-                        local r, g, b = math.round(value.r * 255), math.round(value.g * 255), math.round(value.b * 255)
-                        PASTETEXT.Text = tostring(r) .. "," .. tostring(g) .. "," .. tostring(b)
-                        absvalue = tostring(r) .. "," .. tostring(g) .. "," .. tostring(b)
-                        options.getcolor(value)
-                        
-                        -- Store hue and saturation when value > 0
-                        local h, s, v = Color3.toHSV(value)
-                        if v > 0 then
-                            lastHue = h
-                            lastSaturation = s
-                        end
-                        
-                        -- Update brightness slider position based on value
-                        local brightnessPercent = v
-                        PICKER_TRANSPARENCY.Position = UDim2.new(0, brightnessPercent * TRANSPARENCY.AbsoluteSize.X, 0, 0)
-                        
-                        -- Update hue slider position
-                        local huePercent = h
-                        PICKER_HUE.Position = UDim2.new(0, 0, 0, huePercent * HUE.AbsoluteSize.Y)
-                    end
-                    
-                    local function updateBrightnessSlider(x)
-                        local offsetX = x - TRANSPARENCY.AbsolutePosition.X
-                        offsetX = math.clamp(offsetX, 0, TRANSPARENCY.AbsoluteSize.X)
-                        local percent = offsetX / TRANSPARENCY.AbsoluteSize.X
-                        PICKER_TRANSPARENCY.Position = UDim2.new(0, offsetX, 0, 0)
-                        
-                        -- Get current color from PREVIEW
-                        local currentColor = PREVIEW.BackgroundColor3 or Color3.new(1, 1, 1)
-                        local h, s, v = Color3.toHSV(currentColor)
-                        -- Store original hue and saturation if value > 0
-                        if v > 0 then
-                            lastHue = h
-                            lastSaturation = s
-                        end
-                        
-                        -- Calculate new value from slider
-                        local newValue = percent
-                        
-                        -- Create new color using original hue and saturation if available
-                        local newColor = Color3.fromHSV(lastHue or h, lastSaturation or s, newValue)
-                        
-                        -- Update color
-                        updateValue(newColor)
-                    end
-                    
-                    Library:connection(TRANSPARENCY.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            updateBrightnessSlider(input.Position.X)
-                            
-                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                                    updateBrightnessSlider(input.Position.X)
-                                end
-                            end)
-                            
-                            local endConnection
-                            endConnection = Library:connection(_uis.InputEnded, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                    draggingConnection:Disconnect()
-                                    endConnection:Disconnect()
-                                end
-                            end
-                        end
-                    end)
-                    
-                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            updateBrightnessSlider(input.Position.X)
-                            
-                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                                    updateBrightnessSlider(input.Position.X)
-                                end
-                            end
-                            
-                            local endConnection
-                            endConnection = Library:connection(_uis.InputEnded, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                    draggingConnection:Disconnect()
-                                    endConnection:Disconnect()
-                                end
-                            end
-                        end
-                    end)
-                    
-                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            updateBrightnessSlider(input.Position.X)
-                            
-                            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                                    updateBrightnessSlider(input.Position.X)
-                                end
-                            end
-                            
-                            local endConnection = Library:connection(_uis.InputEnded, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                    draggingConnection:Disconnect()
-                                    endConnection:Disconnect()
-                                end
-                            end
-                        end
-                    end)
-                    
-                    Library:connection(PICKER_TRANSPARENCY.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            updateBrightnessSlider(input.Position.X)
-                        end
-                    end)
-                    
-                    Library:connection(PICKER_TRANSPARENCY.InputChanged, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                            updateBrightnessSlider(input.Position.X)
-                        end
-                    end
-                    
-                    Library:connection(PICKER_TRANSPARENCY.InputEnded, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            draggingConnection:Disconnect()
-                            endConnection:Disconnect()
-                        end
-                    end)
-                    ]]
-                end
-                
                 -- List element
                 function section:AddList(options)
                     options = Library:validate({
@@ -1943,7 +1532,6 @@ ab.AddWindow = function (options)
                         BackgroundTransparency = 0,
                     })
                     
-                    -- SỬA LỖI: Sửa lỗi ColorSequence.new bị thiếu dấu ngoặc
                     Library:Create("UIGradient", {
                         Parent = LISTCONTAINER,
                         Color = ColorSequence.new{
@@ -2001,7 +1589,6 @@ ab.AddWindow = function (options)
                         local CHOICE = Library:Create("Frame", {
                             Size = UDim2.new(1,-2,0,15),
                             Parent = CHOICEHOLDER,
-                            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                             AnchorPoint = Vector2.new(0.5,0),
                             BackgroundTransparency = 1,
                             BorderSizePixel = 0,
@@ -2011,7 +1598,6 @@ ab.AddWindow = function (options)
                         local CHOICETEXT = Library:Create("TextLabel", {
                             Size = UDim2.new(1,0,1,0),
                             Parent = CHOICE,
-                            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                             AnchorPoint = Vector2.new(0.5,0),
                             Position = UDim2.new(0.5,0,0,0),
                             BackgroundTransparency = 1,
@@ -2025,7 +1611,6 @@ ab.AddWindow = function (options)
                         local CHOICEBAR = Library:Create("Frame", {
                             Parent = CHOICE,
                             Size = UDim2.new(0,0,0,1),
-                            -- SỬA LỖI: Sửa lỗi Vector2.new với chuỗi
                             AnchorPoint = Vector2.new(0.5,0.5),
                             Position = UDim2.new(0.5,0,0.5,5),
                             BackgroundTransparency = 0.5,
@@ -2158,7 +1743,7 @@ ab.AddWindow = function (options)
         end)
     
         Library:connection(_uis.InputEnded, function(input)
-            if input == dragInput and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            if input == dragInput and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = false
                 dragInput = nil
             end
