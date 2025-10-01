@@ -927,6 +927,13 @@ ab.AddWindow = function (options)
                 LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
             })
             
+            -- Thêm lại UIStroke cho section để khôi phục viền
+            Library:Create("UIStroke", { 
+                Parent = SECTION,
+                Color = Library.Colors.BorderColor,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+            })
+            
             local SECTIONTEXT = Library:Create("TextLabel", {
                 Parent = SECTION,
                 AnchorPoint = Vector2.new(0.5,0),
@@ -1024,11 +1031,6 @@ ab.AddWindow = function (options)
                     end
                 end
             end
-            
-            Library:Create("UIStroke", { 
-                Parent = SECTION,
-                Color = Library.Colors.BorderColor
-            })
             
             -- Cập nhật kích thước canvas khi khởi tạo
             updateCanvasSize()
