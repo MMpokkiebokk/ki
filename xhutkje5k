@@ -947,11 +947,13 @@ ab.AddWindow = function (options)
                 LayoutOrder = sectionCount, -- Sắp xếp tự động theo thứ tự thêm vào
             })
             
-            -- Thêm lại UIStroke cho section để khôi phục viền
-            Library:Create("UIStroke", { 
+            -- Thêm lại UIStroke cho section để khôi phục viền - Đảm bảo ZIndex cao hơn
+            local sectionStroke = Library:Create("UIStroke", { 
                 Parent = SECTION,
                 Color = Library.Colors.BorderColor,
                 LineJoinMode = Enum.LineJoinMode.Miter,
+                Thickness = 1,
+                ZIndex = 2,
             })
             
             local SECTIONTEXT = Library:Create("TextLabel", {
@@ -966,6 +968,16 @@ ab.AddWindow = function (options)
                 Text = options.name,
                 Name = "SectionText",
                 Size = UDim2.new(0, 0, 0, 10), -- Chiều cao cố định để đảm bảo tên luôn hiển thị
+                ZIndex = 3,
+            })
+            
+            -- Thêm UIStroke cho SECTIONTEXT để đảm bảo nó nổi bật
+            Library:Create("UIStroke", { 
+                Parent = SECTIONTEXT,
+                Color = Library.Colors.BorderColor,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Thickness = 1,
+                ZIndex = 4,
             })
             
             Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
@@ -986,6 +998,7 @@ ab.AddWindow = function (options)
                 ScrollingDirection = Enum.ScrollingDirection.Y,
                 VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                ZIndex = 1,
             })
             
             Library:Create("UIListLayout", { 
