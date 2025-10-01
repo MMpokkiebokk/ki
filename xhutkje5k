@@ -917,6 +917,26 @@ ab.AddWindow = function (options)
                 sectionHeight = UDim.new(0, math.min(sectionHeight, 200)) -- Giới hạn chiều cao tối đa
             end
             
+            -- Tạo biến đếm section để sắp xếp tự động
+            local sectionCount = 0
+            if getgenv().subtab then
+                local subtab_name = options.tab or "default"
+                if not LeftHeight[subtab_name] then LeftHeight[subtab_name] = {} end
+                if not RightHeight[subtab_name] then RightHeight[subtab_name] = {} end
+                
+                if options.side == "Right" then
+                    sectionCount = #RightHeight[subtab_name] + 1
+                else
+                    sectionCount = #LeftHeight[subtab_name] + 1
+                end
+            else
+                if options.side == "Right" then
+                    sectionCount = #RightHeight + 1
+                else
+                    sectionCount = #LeftHeight + 1
+                end
+            end
+            
             local SECTION = Library:Create("Frame", {
                 Size = UDim2.new(1, 0, sectionHeight.Scale, sectionHeight.Offset),
                 AnchorPoint = Vector2.new(0, 0),
@@ -924,7 +944,7 @@ ab.AddWindow = function (options)
                 Position = UDim2.new(0, 0, 0, 0),
                 BorderSizePixel = 0,
                 Name = options.name,
-                LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                LayoutOrder = sectionCount, -- Sắp xếp tự động theo thứ tự thêm vào
             })
             
             -- Thêm lại UIStroke cho section để khôi phục viền
