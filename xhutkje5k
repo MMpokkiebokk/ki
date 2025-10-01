@@ -339,7 +339,7 @@ ab.AddWindow = function (options)
         Color = Library.Colors.BorderColor
     })
     
-    -- Inner container setup - Đảm bảo là ScrollingFrame và tự động cập nhật
+    -- Inner container setup - ScrollingFrame để có thể cuộn
     local INNERCONTAINER = Library:Create("ScrollingFrame", {
         Parent = WINDOW,
         Size = UDim2.new(1, -150, 1, -35),
@@ -355,25 +355,18 @@ ab.AddWindow = function (options)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
+    Library:Create("UIStroke", { 
+        Parent = INNERCONTAINER,
+        Color = Library.Colors.BorderColor,
+        LineJoinMode = Enum.LineJoinMode.Miter,
+    })
+    
+    -- Thêm UIListLayout cho INNERCONTAINER để sắp xếp tự động
     Library:Create("UIListLayout", { 
         Parent = INNERCONTAINER,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 8),
         Name = "InnerLayout"
-    })
-    
-    Library:Create("UIPadding", { 
-        Parent = INNERCONTAINER,
-        PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10),
-    })
-    
-    Library:Create("UIStroke", { 
-        Parent = INNERCONTAINER,
-        Color = Library.Colors.BorderColor,
-        LineJoinMode = Enum.LineJoinMode.Miter,
     })
     
     -- Tab deactivation function
@@ -512,25 +505,19 @@ ab.AddWindow = function (options)
             Name = "TabText"
         })
         
-        -- Tab content container - Đảm bảo là Frame với UIListLayout
+        -- Tab content container - Frame
         local CONTENTCONTAINER = Library:Create("Frame", {
             Parent = INNERCONTAINER,
             Size = UDim2.new(1, 0, 1, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Visible = false,
-            Name = options.name,
-            LayoutOrder = 0, -- Đảm bảo LayoutOrder được thiết lập
+            Name = options.name
         })
         
-        Library:Create("UIListLayout", { 
-            Parent = CONTENTCONTAINER,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-            Name = "ContentLayout"
-        })
-        
-        -- Tạo LEFTCONTAINER và RIGHTCONTAINER là ScrollingFrame
+        -- Tạo LEFTCONTAINER và RIGHTCONTAINER là ScrollingFrame để có thể cuộn
         local LEFTCONTAINER = Library:Create("ScrollingFrame", {
             Parent = CONTENTCONTAINER,
             Size = UDim2.new(0.5, -6, 1, 0),
@@ -543,14 +530,6 @@ ab.AddWindow = function (options)
             ScrollingDirection = Enum.ScrollingDirection.Y,
             VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 1, -- Đảm bảo LayoutOrder được thiết lập
-        })
-        
-        Library:Create("UIListLayout", { 
-            Parent = LEFTCONTAINER,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-            Name = "LeftLayout"
         })
         
         Library:Create("UIPadding", {
@@ -558,6 +537,13 @@ ab.AddWindow = function (options)
             PaddingTop = UDim.new(0,10),
             PaddingBottom = UDim.new(0,10),
             PaddingLeft = UDim.new(0,10),
+        })
+        
+        Library:Create("UIListLayout", { 
+            Parent = LEFTCONTAINER,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8),
+            Name = "LeftLayout"
         })
         
         local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
@@ -574,7 +560,13 @@ ab.AddWindow = function (options)
             ScrollingDirection = Enum.ScrollingDirection.Y,
             VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 2, -- Đảm bảo LayoutOrder được thiết lập
+        })
+        
+        Library:Create("UIPadding", {
+            Parent = RIGHTCONTAINER,
+            PaddingTop = UDim.new(0,10),
+            PaddingBottom = UDim.new(0,10),
+            PaddingRight = UDim.new(0,10),
         })
         
         Library:Create("UIListLayout", { 
@@ -584,12 +576,33 @@ ab.AddWindow = function (options)
             Name = "RightLayout"
         })
         
-        Library:Create("UIPadding", {
-            Parent = RIGHTCONTAINER,
-            PaddingTop = UDim.new(0,10),
-            PaddingBottom = UDim.new(0,10),
-            PaddingRight = UDim.new(0,10),
-        })
+        -- Hàm cập nhật CanvasSize khi thêm section mới
+        local function updateContainerCanvasSize(container)
+            local layout = container:FindFirstChildOfClass("UIListLayout")
+            if layout then
+                local padding = container:FindFirstChildOfClass("UIPadding")
+                local topPadding = padding and padding.PaddingTop.Offset or 0
+                local bottomPadding = padding and padding.PaddingBottom.Offset or 0
+                
+                container.CanvasSize = UDim2.new(
+                    0, 0,
+                    0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding
+                )
+            end
+        end
+        
+        -- Theo dõi khi thêm section mới để cập nhật CanvasSize
+        Library:connection(LEFTCONTAINER.ChildAdded, function(child)
+            if child:IsA("GuiObject") then
+                updateContainerCanvasSize(LEFTCONTAINER)
+            end
+        end)
+        
+        Library:connection(RIGHTCONTAINER.ChildAdded, function(child)
+            if child:IsA("GuiObject") then
+                updateContainerCanvasSize(RIGHTCONTAINER)
+            end
+        end)
         
         -- Lưu trữ tham chiếu đến các container trong tab
         tab.CONTENTCONTAINER = CONTENTCONTAINER
@@ -672,8 +685,7 @@ ab.AddWindow = function (options)
                 SUBTABCONTAINER = Library:Create("Frame", {
                     Parent = CONTENTCONTAINER,
                     Size = UDim2.new(1,0,0,20),
-                    Name = "SubTabContainer",
-                    LayoutOrder = 0, -- Đảm bảo LayoutOrder được thiết lập
+                    Name = "SubTabContainer"
                 })
         
                 Library:Create("UIListLayout", {
@@ -757,15 +769,7 @@ ab.AddWindow = function (options)
                 Visible = false,
                 Position = UDim2.new(0,0,0,25),
                 Size = UDim2.new(1,0,1,-25),
-                Name = options.name,
-                LayoutOrder = 1, -- Đảm bảo LayoutOrder được thiết lập
-            })
-            
-            Library:Create("UIListLayout", { 
-                Parent = SUBCONTENTCONTAINER,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 8),
-                Name = "SubContentLayout"
+                Name = options.name
             })
             
             -- Tạo ScrollingFrame cho sub-tab container
@@ -781,7 +785,6 @@ ab.AddWindow = function (options)
                 ScrollingDirection = Enum.ScrollingDirection.Y,
                 VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                LayoutOrder = 1, -- Đảm bảo LayoutOrder được thiết lập
             })
             
             local SUBRIGHTCONTAINER = Library:Create("ScrollingFrame", {
@@ -798,7 +801,6 @@ ab.AddWindow = function (options)
                 ScrollingDirection = Enum.ScrollingDirection.Y,
                 VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                LayoutOrder = 2, -- Đảm bảo LayoutOrder được thiết lập
             })
 
             Library:Create("UIListLayout", { 
@@ -898,7 +900,7 @@ ab.AddWindow = function (options)
                 tab = nil,
                 name = "preview",
                 side = "Left",
-                height = "fill", -- fill, half,
+                height = "fill" -- fill, half,
             }, options or {})
             
             local section = { Hover = false, }
@@ -917,26 +919,6 @@ ab.AddWindow = function (options)
                 sectionHeight = UDim.new(0, math.min(sectionHeight, 200)) -- Giới hạn chiều cao tối đa
             end
             
-            -- Tạo biến đếm section để sắp xếp tự động
-            local sectionCount = 0
-            if getgenv().subtab then
-                local subtab_name = options.tab or "default"
-                if not LeftHeight[subtab_name] then LeftHeight[subtab_name] = {} end
-                if not RightHeight[subtab_name] then RightHeight[subtab_name] = {} end
-                
-                if options.side == "Right" then
-                    sectionCount = #RightHeight[subtab_name] + 1
-                else
-                    sectionCount = #LeftHeight[subtab_name] + 1
-                end
-            else
-                if options.side == "Right" then
-                    sectionCount = #RightHeight + 1
-                else
-                    sectionCount = #LeftHeight + 1
-                end
-            end
-            
             local SECTION = Library:Create("Frame", {
                 Size = UDim2.new(1, 0, sectionHeight.Scale, sectionHeight.Offset),
                 AnchorPoint = Vector2.new(0, 0),
@@ -944,18 +926,10 @@ ab.AddWindow = function (options)
                 Position = UDim2.new(0, 0, 0, 0),
                 BorderSizePixel = 0,
                 Name = options.name,
-                LayoutOrder = sectionCount, -- Sắp xếp tự động theo thứ tự thêm vào
+                LayoutOrder = #LEFTCONTAINER:GetChildren() + #RIGHTCONTAINER:GetChildren() + 1
             })
             
-            -- Thêm lại UIStroke cho section để khôi phục viền - Đảm bảo ZIndex cao hơn
-            local sectionStroke = Library:Create("UIStroke", { 
-                Parent = SECTION,
-                Color = Library.Colors.BorderColor,
-                LineJoinMode = Enum.LineJoinMode.Miter,
-                Thickness = 1,
-                ZIndex = 2,
-            })
-            
+            -- Đặt chiều cao cố định cho tên section
             local SECTIONTEXT = Library:Create("TextLabel", {
                 Parent = SECTION,
                 AnchorPoint = Vector2.new(0.5,0),
@@ -967,22 +941,8 @@ ab.AddWindow = function (options)
                 FontFace = Library.Font,
                 Text = options.name,
                 Name = "SectionText",
-                Size = UDim2.new(0, 0, 0, 10), -- Chiều cao cố định để đảm bảo tên luôn hiển thị
-                ZIndex = 3,
+                Size = UDim2.new(0, 100, 0, 10) -- Chiều cao cố định
             })
-            
-            -- Thêm UIStroke cho SECTIONTEXT để đảm bảo nó nổi bật
-            Library:Create("UIStroke", { 
-                Parent = SECTIONTEXT,
-                Color = Library.Colors.BorderColor,
-                LineJoinMode = Enum.LineJoinMode.Miter,
-                Thickness = 1,
-                ZIndex = 4,
-            })
-            
-            Library:connection(SECTIONTEXT:GetPropertyChangedSignal("TextBounds"), function() 
-                SECTIONTEXT.Size = UDim2.new(0,SECTIONTEXT.TextBounds.X + 25,0,10) 
-            end)
             
             -- Thay thế phần ELEMENTCONTAINER trong hàm AddSection
             local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
@@ -998,7 +958,6 @@ ab.AddWindow = function (options)
                 ScrollingDirection = Enum.ScrollingDirection.Y,
                 VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                ZIndex = 1,
             })
             
             Library:Create("UIListLayout", { 
@@ -1065,6 +1024,11 @@ ab.AddWindow = function (options)
                 end
             end
             
+            Library:Create("UIStroke", { 
+                Parent = SECTION,
+                Color = Library.Colors.BorderColor
+            })
+            
             -- Cập nhật kích thước canvas khi khởi tạo
             updateCanvasSize()
             
@@ -1080,7 +1044,7 @@ ab.AddWindow = function (options)
                     Size = UDim2.new(1, 0, 0, 15),
                     Name = options.name,
                     BackgroundTransparency = 1,
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 local BUTTON = Library:Create("Frame", {
@@ -1134,7 +1098,7 @@ ab.AddWindow = function (options)
                 return
             end
             
-            -- Textbox element - Sửa lỗi không ghi đè lên tên section
+            -- Textbox element
             function section:AddTextbox(options)
                 options = Library:validate({
                     name = "example textbox",
@@ -1151,7 +1115,7 @@ ab.AddWindow = function (options)
                     BorderColor3 = Library.Colors.BorderColor,
                     Size = UDim2.new(1, 0, 0, 15),
                     ZIndex = 10,
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 Library:Create("UIGradient", {
@@ -1199,13 +1163,17 @@ ab.AddWindow = function (options)
                     ZIndex = 10
                 })
                 
-                -- Textbox functionality - Sửa lỗi không ghi đè lên tên section
+                -- Textbox functionality
                 Library:connection(BOX.MouseEnter, function()
                     Library:tween(BOX, {TextColor3 = Library.Colors.ElementActive})
                 end)
             
                 Library:connection(BOX.MouseLeave, function()
                     Library:tween(BOX, {TextColor3 = Library.Colors.ElementInactive})
+                end)
+                
+                Library:connection(BOX:GetPropertyChangedSignal("Text"), function()
+                    -- Không ghi đè lên tên section
                 end)
                 
                 Library:connection(BOX.FocusLost, function(enterPressed)
@@ -1239,7 +1207,7 @@ ab.AddWindow = function (options)
                     Parent = ELEMENTCONTAINER,
                     BackgroundTransparency = 1,
                     Name = "ToggleContainer",
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 local TOGGLE = Library:Create("Frame", {
@@ -1897,7 +1865,7 @@ ab.AddWindow = function (options)
                 return toggle
             end
             
-            -- Slider element - Sửa lỗi để nhận cả số nguyên và số thập phân
+            -- Slider element
             function section:AddSlider(options)
                 options = Library:validate({
                     name = "example slider",
@@ -1951,7 +1919,7 @@ ab.AddWindow = function (options)
                     Parent = ELEMENTCONTAINER,
                     BackgroundTransparency = 1,
                     Name = "SliderContainer",
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 local SLIDERTITLE = Library:Create("TextLabel", {
@@ -2048,37 +2016,27 @@ ab.AddWindow = function (options)
                     CornerRadius = UDim.new(0, 4)
                 })
                 
-                -- Slider methods - Sửa lỗi để nhận cả số nguyên và số thập phân
+                -- Slider methods
                 function slider:SetValue(v)
                     local slidervalue
                     if v == nil then
                         local mouseX = mouse.X
                         if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
                             local output = (mouseX - SLIDERBACK.AbsolutePosition.X) / SLIDERBACK.AbsoluteSize.X
-                            -- Sửa lỗi để nhận cả số nguyên và số thập phân
-                            slidervalue = math.clamp((output * (options.max - options.min) + options.min), options.min, options.max)
+                            slidervalue = math.clamp(output * (options.max - options.min) + options.min, options.min, options.max)
                         else
                             return
                         end
                     else
                         if v and tonumber(v) then
-                            -- Sửa lỗi để nhận cả số nguyên và số thập phân
                             slidervalue = math.clamp(tonumber(v), options.min, options.max)
                         else
                             slidervalue = 0
                         end
                     end
-                    -- Sửa lỗi để nhận cả số nguyên và số thập phân
-                    local displayValue = slidervalue
-                    if math.floor(slidervalue) == slidervalue then
-                        displayValue = math.floor(slidervalue)
-                    else
-                        displayValue = math.round(slidervalue * 100) / 100
-                    end
-                    
-                    SLIDERVALUE.Text = displayValue .. (options.suffix or "")
+                    SLIDERVALUE.Text = slidervalue .. (options.suffix or "")
                     SLIDER:TweenSize(UDim2.fromScale((slidervalue - options.min) / (options.max - options.min), 1), Enum.EasingDirection.In, Enum.EasingStyle.Linear, 0.1, true)
-                    TEXTBOX.Text = tostring(displayValue)
+                    TEXTBOX.Text = tostring(slidervalue)
                     options.callback(slider:GetValue())
                 end
                         
@@ -2087,7 +2045,6 @@ ab.AddWindow = function (options)
                     if text == "" or not tonumber(text) then
                         return nil
                     end
-                    -- Sửa lỗi để nhận cả số nguyên và số thập phân
                     return tonumber(text)
                 end
                 
@@ -2256,7 +2213,7 @@ ab.AddWindow = function (options)
                     Name = options.name,
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 local DROPDOWNTEXT = Library:Create("TextLabel", {
@@ -2499,7 +2456,7 @@ ab.AddWindow = function (options)
                     BorderSizePixel = 1,
                     BorderColor3 = Color3.fromRGB(255,255,255),
                     BackgroundTransparency = 0,
-                    LayoutOrder = options.layoutOrder or 1, -- Sắp xếp tự động theo LayoutOrder
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
                 Library:Create("UIGradient", {
