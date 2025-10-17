@@ -339,10 +339,11 @@ ab.AddWindow = function (options)
         Color = Library.Colors.BorderColor
     })
     
+    -- Inner container setup - ScrollingFrame để có thể cuộn
     local INNERCONTAINER = Library:Create("ScrollingFrame", {
         Parent = WINDOW,
-        Size = UDim2.new(1, -152, 1, -35),  -- Giảm chiều rộng 2 pixel
-        Position = UDim2.new(0, 141, 0, 28),  -- Dịch chuyển sang phải 1 pixel
+        Size = UDim2.new(1, -150, 1, -35),
+        Position = UDim2.new(0, 140, 0, 28),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Name = "InnerContainer",
@@ -350,7 +351,7 @@ ab.AddWindow = function (options)
         ScrollBarThickness = 4,
         ScrollBarImageColor3 = Library.Colors.Accent,
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        VerticalScrollBarInset = Enum.ScrollBarInset.Always,
+        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
@@ -516,9 +517,10 @@ ab.AddWindow = function (options)
             Name = options.name
         })
         
+        -- Tạo LEFTCONTAINER và RIGHTCONTAINER là ScrollingFrame để có thể cuộn
         local LEFTCONTAINER = Library:Create("ScrollingFrame", {
             Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -7, 1, 0),  -- Giảm chiều rộng 1 pixel
+            Size = UDim2.new(0.5, -6, 1, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Name = "LeftContainer",
@@ -526,7 +528,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.Always,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -544,10 +546,9 @@ ab.AddWindow = function (options)
             Name = "LeftLayout"
         })
         
-        
         local RIGHTCONTAINER = Library:Create("ScrollingFrame", {
             Parent = CONTENTCONTAINER,
-            Size = UDim2.new(0.5, -7, 1, 0),  -- Giảm chiều rộng 1 pixel
+            Size = UDim2.new(0.5, -6, 1, 0),
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, 0, 0, 0),
             BackgroundTransparency = 1,
@@ -557,7 +558,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.Always,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -771,9 +772,10 @@ ab.AddWindow = function (options)
                 Name = options.name
             })
             
+            -- Tạo ScrollingFrame cho sub-tab container
             local SUBLEFTCONTAINER = Library:Create("ScrollingFrame", {
                 Parent = SUBCONTENTCONTAINER,
-                Size = UDim2.new(0.5, -7, 1, 0),  -- Giảm chiều rộng 1 pixel
+                Size = UDim2.new(0.5, -6, 1, 0),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Name = "LeftContainer",
@@ -781,13 +783,13 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.Always,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
             
             local SUBRIGHTCONTAINER = Library:Create("ScrollingFrame", {
                 Parent = SUBCONTENTCONTAINER,
-                Size = UDim2.new(0.5, -7, 1, 0),  -- Giảm chiều rộng 1 pixel
+                Size = UDim2.new(0.5, -6, 1, 0),
                 AnchorPoint = Vector2.new(1, 0),
                 Position = UDim2.new(1, 0, 0, 0),
                 BackgroundTransparency = 1,
@@ -797,7 +799,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.Always,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
 
@@ -942,10 +944,11 @@ ab.AddWindow = function (options)
                 Size = UDim2.new(0, 100, 0, 10) -- Chiều cao cố định
             })
             
+            -- Thay thế phần ELEMENTCONTAINER trong hàm AddSection
             local ELEMENTCONTAINER = Library:Create("ScrollingFrame", {
                 Parent = SECTION,
-                Size = UDim2.new(1, -2, 1, -10),  -- Giảm chiều rộng 2 pixel
-                Position = UDim2.new(0, 1, 0, 10),  -- Dịch chuyển sang phải 1 pixel
+                Size = UDim2.new(1, 0, 1, -10),
+                Position = UDim2.new(0, 0, 0, 10),
                 BackgroundTransparency = 1,
                 Name = "ElementContainer",
                 CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -953,7 +956,7 @@ ab.AddWindow = function (options)
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 BorderSizePixel = 0,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
             
@@ -1021,9 +1024,12 @@ ab.AddWindow = function (options)
                 end
             end
             
-            Library:Create("UIStroke", { 
+            -- Tạo UIStroke cho section với LineJoinMode.Miter để đảm bảo viền đầy đủ
+            local sectionStroke = Library:Create("UIStroke", { 
                 Parent = SECTION,
-                Color = Library.Colors.BorderColor
+                Color = Library.Colors.BorderColor,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Thickness = 1
             })
             
             -- Cập nhật kích thước canvas khi khởi tạo
