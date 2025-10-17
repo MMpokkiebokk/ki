@@ -919,14 +919,63 @@ ab.AddWindow = function (options)
                 sectionHeight = UDim.new(0, math.min(sectionHeight, 200)) -- Giới hạn chiều cao tối đa
             end
             
-            local SECTION = Library:Create("Frame", {
-                Size = UDim2.new(1, 0, sectionHeight.Scale, sectionHeight.Offset),
+            -- Tạo một container bên ngoài để chứa section và viền
+            local SECTIONCONTAINER = Library:Create("Frame", {
+                Size = UDim2.new(1, 0, sectionHeight.Scale, sectionHeight.Offset + 10), -- Thêm không gian cho tên section
                 AnchorPoint = Vector2.new(0, 0),
-                BackgroundColor3 = Library.Colors.Section,
+                BackgroundTransparency = 1,
                 Position = UDim2.new(0, 0, 0, 0),
                 BorderSizePixel = 0,
-                Name = options.name,
+                Name = options.name .. "_Container",
                 LayoutOrder = #LEFTCONTAINER:GetChildren() + #RIGHTCONTAINER:GetChildren() + 1
+            })
+            
+            -- Tạo viền bằng 4 Frame riêng biệt
+            local BORDER_TOP = Library:Create("Frame", {
+                Parent = SECTIONCONTAINER,
+                Size = UDim2.new(1, 0, 0, 1),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundColor3 = Library.Colors.BorderColor,
+                BorderSizePixel = 0,
+                Name = "BorderTop"
+            })
+            
+            local BORDER_BOTTOM = Library:Create("Frame", {
+                Parent = SECTIONCONTAINER,
+                Size = UDim2.new(1, 0, 0, 1),
+                Position = UDim2.new(0, 0, 1, -1),
+                BackgroundColor3 = Library.Colors.BorderColor,
+                BorderSizePixel = 0,
+                Name = "BorderBottom"
+            })
+            
+            local BORDER_LEFT = Library:Create("Frame", {
+                Parent = SECTIONCONTAINER,
+                Size = UDim2.new(0, 1, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundColor3 = Library.Colors.BorderColor,
+                BorderSizePixel = 0,
+                Name = "BorderLeft"
+            })
+            
+            local BORDER_RIGHT = Library:Create("Frame", {
+                Parent = SECTIONCONTAINER,
+                Size = UDim2.new(0, 1, 1, 0),
+                Position = UDim2.new(1, -1, 0, 0),
+                BackgroundColor3 = Library.Colors.BorderColor,
+                BorderSizePixel = 0,
+                Name = "BorderRight"
+            })
+            
+            -- Tạo section chính bên trong container
+            local SECTION = Library:Create("Frame", {
+                Parent = SECTIONCONTAINER,
+                Size = UDim2.new(1, -2, 1, -2), -- Giảm 2 pixel để không chồng lên viền
+                AnchorPoint = Vector2.new(0, 0),
+                BackgroundColor3 = Library.Colors.Section,
+                Position = UDim2.new(0, 1, 0, 1),
+                BorderSizePixel = 0,
+                Name = options.name,
             })
             
             -- Đặt chiều cao cố định cho tên section
@@ -1007,30 +1056,22 @@ ab.AddWindow = function (options)
                     if not RightHeight[subtab_name] then RightHeight[subtab_name] = {} end
                     
                     if options.side == "Right" then
-                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("RightContainer")
-                        table.insert(RightHeight[subtab_name], SECTION.AbsoluteSize.Y)
+                        SECTIONCONTAINER.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("RightContainer")
+                        table.insert(RightHeight[subtab_name], SECTIONCONTAINER.AbsoluteSize.Y)
                     else
-                        SECTION.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("LeftContainer")
-                        table.insert(LeftHeight[subtab_name], SECTION.AbsoluteSize.Y)
+                        SECTIONCONTAINER.Parent = CONTENTCONTAINER:FindFirstChild(subtab_name):FindFirstChild("LeftContainer")
+                        table.insert(LeftHeight[subtab_name], SECTIONCONTAINER.AbsoluteSize.Y)
                     end
                 else
                     if options.side == "Right" then
-                        SECTION.Parent = RIGHTCONTAINER
-                        table.insert(RightHeight, SECTION.AbsoluteSize.Y)
+                        SECTIONCONTAINER.Parent = RIGHTCONTAINER
+                        table.insert(RightHeight, SECTIONCONTAINER.AbsoluteSize.Y)
                     else
-                        SECTION.Parent = LEFTCONTAINER
-                        table.insert(LeftHeight, SECTION.AbsoluteSize.Y)
+                        SECTIONCONTAINER.Parent = LEFTCONTAINER
+                        table.insert(LeftHeight, SECTIONCONTAINER.AbsoluteSize.Y)
                     end
                 end
             end
-            
-            -- Tạo UIStroke cho section với LineJoinMode.Miter để đảm bảo viền đầy đủ
-            local sectionStroke = Library:Create("UIStroke", { 
-                Parent = SECTION,
-                Color = Library.Colors.BorderColor,
-                LineJoinMode = Enum.LineJoinMode.Miter,
-                Thickness = 1
-            })
             
             -- Cập nhật kích thước canvas khi khởi tạo
             updateCanvasSize()
