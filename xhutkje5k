@@ -350,7 +350,7 @@ ab.AddWindow = function (options)
         ScrollBarThickness = 4,
         ScrollBarImageColor3 = Library.Colors.Accent,
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+        VerticalScrollBarInset = Enum.ScrollBarInset.Always,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
@@ -526,7 +526,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+            VerticalScrollBarInset = Enum.ScrollBarInset.Always,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -557,7 +557,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+            VerticalScrollBarInset = Enum.ScrollBarInset.Always,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -781,7 +781,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.Always,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
             
@@ -797,7 +797,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.Always,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
 
