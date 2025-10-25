@@ -119,6 +119,18 @@ ab.AddWindow = function (options)
         Name = options.name,
         Enabled = true
     }, true)
+    
+    local WINDOW = Library:Create("Frame", {
+        Parent = SCREENGUI,
+        Size = options.size,
+        AnchorPoint = Vector2.new("0.5","0.5"),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        BackgroundColor3 = Library.Colors.Window,
+        BorderSizePixel = 0,
+        Name = "Window",
+        Visible = true,
+        ClipsDescendants = true
+    })
 
     local WATERMARK_FRAME = Library:Create("Frame", {
         Name = "WatermarkFrame",
@@ -140,7 +152,7 @@ ab.AddWindow = function (options)
         PaddingTop = UDim.new(0, 3),
     })
     
-    local WATERMARK_TEXT = Library:Create("TextLabel", {
+    local WATERMARK_TEXT = Library:Create("TextButton", {
         Name = "WatermarkText",
         Parent = WATERMARK_FRAME,
         BackgroundTransparency = 1,
@@ -150,20 +162,16 @@ ab.AddWindow = function (options)
         RichText = true,
         TextColor3 = Library.Colors.TopText,
         Text = "Loading...",
-    })
-
-    local WINDOW = Library:Create("Frame", {
-        Parent = SCREENGUI,
-        Size = options.size,
-        AnchorPoint = Vector2.new("0.5","0.5"),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        BackgroundColor3 = Library.Colors.Window,
-        BorderSizePixel = 0,
-        Name = "Window",
-        Visible = true,
-        ClipsDescendants = true
+        AutoButtonColor = false
     })
     
+    Library:connection(WATERMARK_TEXT.MouseButton1Click, function()
+        WINDOW.Visible = not WINDOW.Visible
+    end)
+    Library:connection(WATERMARK_TEXT.MouseEnter, function() Library:tween(WATERMARK_TEXT, { TextColor3 = Library.Colors.TabActive }) end)
+    Library:connection(WATERMARK_TEXT.MouseLeave, function() Library:tween(WATERMARK_TEXT, { TextColor3 = Library.Colors.TopText }) end)
+
+
     local WINDOW_OUTLINE = Library:Create("Frame", {
         Parent = WINDOW,
         Size = UDim2.new(1,0,1,0),
@@ -457,7 +465,7 @@ ab.AddWindow = function (options)
         
             local SUBTAB = Library:Create("TextButton", {
                 Parent = SUBTABCONTAINER, BackgroundTransparency = 1, Text = "",
-                Size = UDim2.fromScale(1 / #SUBTABCONTAINER:GetChildren(), 1), Name = suboptions.name
+                Size = UDim2.fromScale(1 / (#SUBTABCONTAINER:GetChildren() + 1), 1), Name = suboptions.name
             })
             for _, v in ipairs(SUBTABCONTAINER:GetChildren()) do if v:IsA("TextButton") then v.Size = UDim2.fromScale(1 / #SUBTABCONTAINER:GetChildren(), 1) end end
             
@@ -522,11 +530,17 @@ ab.AddWindow = function (options)
 
             local SECTION = Library:Create("Frame", {
                 Parent = parentContainer,
-                Size = UDim2.new(1, -10, 0, options.height),
                 BackgroundColor3 = Library.Colors.Section,
                 Name = options.name,
                 BorderSizePixel = 0,
             })
+
+            if options.height == "auto" then
+                SECTION.AutomaticSize = Enum.AutomaticSize.Y
+                SECTION.Size = UDim2.new(1, -10, 0, 0)
+            else
+                SECTION.Size = UDim2.new(1, -10, 0, tonumber(options.height) or 150)
+            end
             
             Library:Create("UIStroke", {Parent = SECTION, Color = Library.Colors.BorderColor})
 
@@ -824,7 +838,7 @@ ab.AddWindow = function (options)
                 local HOLDER = Library:Create("Frame",{Parent=ELEMENTCONTAINER, Size=UDim2.new(1,0,0,30), BackgroundTransparency=1, ZIndex=dropdownindex})
                 Library:Create("TextLabel", {Parent=HOLDER, Size=UDim2.fromScale(1,0.5), BackgroundTransparency=1, FontFace=Library.Font, TextColor3=Library.Colors.TabInactive, Text=dd_options.name, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left})
 
-                local BUTTON = Library:Create("TextButton", {Parent=HOLDER, Position=UDim2.new(0,0,0.5,0), Size=UDim2.new(1,0,0,15), Text="", BackgroundColor3=Library.Colors.ElementInactive})
+                local BUTTON = Library:Create("TextButton", {Parent=HOLDER, Position=UDim2.new(0,0,0.5,0), Size=UDim2.new(1,0,0,15), Text="", BackgroundColor3=Library.Colors.ElementInactive, AutoButtonColor=false})
                 Library:Create("UIStroke",{Parent=BUTTON,Color=Library.Colors.BorderColor})
                 
                 local ACTIVE_TEXT = Library:Create("TextLabel",{ Parent=BUTTON, Size=UDim2.fromScale(1,1), BackgroundTransparency=1, FontFace=Library.Font, TextColor3=Library.Colors.TabInactive, Text=dropdown.selection, TextSize=9})
@@ -885,7 +899,7 @@ ab.AddWindow = function (options)
                 
                 for _, name in ipairs(list_options.list) do
                     local item_btn = Library:Create("TextButton",{
-                        Parent=LIST_HOLDER, Size=UDim2.new(1,0,0,18), BackgroundTransparency=1, Text="", AutoButtonColor=false
+                        Parent=LIST_HOLDER, Size=UDim2.new(1,0,0,18), BackgroundTransparency=1, Text="", AutoButtonColor=false, Name = name
                     })
                     local item_text = Library:Create("TextLabel",{
                         Parent=item_btn, Size=UDim2.fromScale(1,1), BackgroundTransparency=1, FontFace=Library.Font, Text=name, TextSize=9,
@@ -896,8 +910,12 @@ ab.AddWindow = function (options)
                         list.Selection = name
                         list_options.callback(name)
                         for _, other_btn in ipairs(LIST_HOLDER:GetChildren()) do
-                           if other_btn:IsA("TextButton") then other_btn.BackgroundColor3 = (other_btn.Name == item_btn.Name) and Library.Colors.Accent or Color3.fromRGB(0,0,0) end
-                           other_btn.BackgroundTransparency = (other_btn:FindFirstChildWhichIsA("TextLabel").Text == list.Selection) and 0.8 or 1
+                           if other_btn:IsA("TextButton") then
+                               local is_selected = other_btn.Name == item_btn.Name
+                               other_btn:FindFirstChildOfClass("TextLabel").TextColor3 = is_selected and Library.Colors.Accent or Library.Colors.TabInactive
+                               other_btn.BackgroundColor3 = is_selected and Library.Colors.BorderColor or Color3.new()
+                               other_btn.BackgroundTransparency = is_selected and 0.5 or 1
+                           end
                         end
                     end)
                 end
