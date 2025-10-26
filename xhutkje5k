@@ -26,12 +26,6 @@ local Library = {
     Instances = {},
     Connections = {},
     Font = nil,
-    -- Thêm hệ thống cập nhật tự động
-    UpdateSystem = {
-        DataSources = {},
-        UpdateCallbacks = {},
-        UpdateConnections = {}
-    }
 }
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
@@ -90,12 +84,6 @@ function Library:unload()
             v:Disconnect() 
         end 
     end
-    -- Ngắt kết nối hệ thống cập nhật
-    for _, connection in pairs(Library.UpdateSystem.UpdateConnections) do
-        if connection then
-            connection:Disconnect()
-        end
-    end
 end
 function Library:tween(object, goal, callback)
     local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
@@ -104,69 +92,6 @@ function Library:tween(object, goal, callback)
     end
     tween:Play()
 end
-
--- Hệ thống cập nhật tự động
-function Library:RegisterDataSource(name, sourceFunction, updateInterval)
-    Library.UpdateSystem.DataSources[name] = {
-        Get = sourceFunction,
-        LastValue = nil,
-        UpdateInterval = updateInterval or 1,
-        LastUpdate = 0
-    }
-    
-    -- Tạo kết nối cập nhật
-    local connection
-    if updateInterval and updateInterval > 0 then
-        connection = _runservice.Heartbeat:Connect(function()
-            local currentTime = tick()
-            if currentTime - Library.UpdateSystem.DataSources[name].LastUpdate >= updateInterval then
-                Library:UpdateDataSource(name)
-                Library.UpdateSystem.DataSources[name].LastUpdate = currentTime
-            end
-        end)
-    else
-        connection = _runservice.Heartbeat:Connect(function()
-            Library:UpdateDataSource(name)
-        end)
-    end
-    
-    table.insert(Library.UpdateSystem.UpdateConnections, connection)
-    
-    -- Cập nhật lần đầu
-    Library:UpdateDataSource(name)
-end
-
-function Library:UpdateDataSource(name)
-    local dataSource = Library.UpdateSystem.DataSources[name]
-    if not dataSource then return end
-    
-    local newValue = dataSource.Get()
-    if newValue ~= dataSource.LastValue then
-        dataSource.LastValue = newValue
-        
-        -- Gọi tất cả các callback đã đăng ký
-        if Library.UpdateSystem.UpdateCallbacks[name] then
-            for _, callback in pairs(Library.UpdateSystem.UpdateCallbacks[name]) do
-                callback(newValue)
-            end
-        end
-    end
-end
-
-function Library:RegisterUpdateCallback(dataSourceName, id, callback)
-    if not Library.UpdateSystem.UpdateCallbacks[dataSourceName] then
-        Library.UpdateSystem.UpdateCallbacks[dataSourceName] = {}
-    end
-    
-    Library.UpdateSystem.UpdateCallbacks[dataSourceName][id] = callback
-end
-
-function Library:UnregisterUpdateCallback(dataSourceName, id)
-    if Library.UpdateSystem.UpdateCallbacks[dataSourceName] then
-        Library.UpdateSystem.UpdateCallbacks[dataSourceName][id] = nil
-    end
-end
-
 -- Hàm lerp không được sử dụng, có thể loại bỏ nếu muốn
 function lerp(startValue, endValue, duration, callback)
     local startTime = tick()
@@ -432,7 +357,7 @@ ab.AddWindow = function (options)
         ScrollBarThickness = 4,
         ScrollBarImageColor3 = Library.Colors.Accent,
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+        VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
@@ -2270,7 +2195,7 @@ ab.AddWindow = function (options)
                 return slider 
             end
             
-            -- Dropdown element (PHẦN ĐÃ ĐƯỢC SỬA)
+            -- Dropdown element (PHẦN ĐÃ ĐƯỢC SỬA ĐỂ TỰ ĐỘNG CẬP NHẬT)
             function section:AddDropdown(options)
                 options = Library:validate({
                     name = "example dropdown",
@@ -2279,10 +2204,17 @@ ab.AddWindow = function (options)
                     max = 3,
                     default = nil,
                     callback = function(active) end,
-                    dataSource = nil -- Thêm tham số dataSource để tự động cập nhật
+                    updateRate = 1 -- Tần suất cập nhật tự động (giây)
                 }, options or {})
                 
                 dropdownindex = dropdownindex - 1
+                
+                -- Kiểm tra xem list có phải là một hàm không (để tự động cập nhật)
+                local listFunction = nil
+                if type(options.list) == "function" then
+                    listFunction = options.list
+                    options.list = listFunction() -- Lấy giá trị ban đầu
+                end
                 
                 -- Xử lý default value cho multi-select
                 local defaultValues = {}
@@ -2316,9 +2248,7 @@ ab.AddWindow = function (options)
                     multi = options.multi,
                     max = options.max,
                     selectedItems = defaultValues,
-                    choiceElements = {}, -- Lưu trữ tham chiếu đến các phần tử lựa chọn
-                    dataSource = options.dataSource, -- Lưu trữ tham chiếu đến dataSource
-                    updateId = "dropdown_" .. tick() .. math.random() -- ID duy nhất cho cập nhật
+                    choiceElements = {} -- Lưu trữ tham chiếu đến các phần tử lựa chọn
                 }
                 
                 local DROPDOWNCONTAINER = Library:Create("Frame", {
@@ -2624,38 +2554,50 @@ ab.AddWindow = function (options)
                     end
                 end
                 
-                -- Đăng ký callback cập nhật nếu có dataSource
-                if dropdown.dataSource then
-                    Library:RegisterUpdateCallback(dropdown.dataSource, dropdown.updateId, function(newList)
-                        -- Cập nhật danh sách lựa chọn
-                        options.list = newList
-                        
-                        -- Xóa các lựa chọn không còn tồn tại trong danh sách mới
-                        local newSelectedItems = {}
-                        for _, selectedItem in ipairs(dropdown.selectedItems) do
-                            for _, newItem in ipairs(newList) do
-                                if selectedItem == newItem then
-                                    table.insert(newSelectedItems, selectedItem)
-                                    break
-                                end
-                            end
-                        end
-                        
-                        dropdown.selectedItems = newSelectedItems
-                        
-                        -- Cập nhật hiển thị
-                        ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected"
-                        
-                        -- Tạo lại các lựa chọn
-                        rebuildChoices()
-                        
-                        -- Gọi callback với danh sách các lựa chọn đã được cập nhật
-                        options.callback(dropdown.selectedItems)
-                    end)
-                end
-                
                 -- Tạo các lựa chọn ban đầu
                 rebuildChoices()
+                
+                -- Thiết lập cập nhật tự động nếu list là một hàm
+                if listFunction then
+                    local lastUpdateTime = 0
+                    local updateConnection = Library:connection(_runservice.Heartbeat, function()
+                        local currentTime = tick()
+                        if currentTime - lastUpdateTime >= options.updateRate then
+                            lastUpdateTime = currentTime
+                            
+                            local newList = listFunction()
+                            -- So sánh danh sách cũ và mới (dùng cách đơn giản là chuyển thành string)
+                            local currentListString = table.concat(options.list, "|")
+                            local newListString = table.concat(newList, "|")
+                            
+                            if currentListString ~= newListString then
+                                options.list = newList
+                                
+                                -- Xóa các lựa chọn không còn tồn tại trong danh sách mới
+                                local newSelectedItems = {}
+                                for _, selectedItem in ipairs(dropdown.selectedItems) do
+                                    for _, newItem in ipairs(newList) do
+                                        if selectedItem == newItem then
+                                            table.insert(newSelectedItems, selectedItem)
+                                            break
+                                        end
+                                    end
+                                end
+                                
+                                dropdown.selectedItems = newSelectedItems
+                                
+                                -- Cập nhật hiển thị
+                                ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected"
+                                
+                                -- Tạo lại các lựa chọn
+                                rebuildChoices()
+                                
+                                -- Gọi callback với danh sách các lựa chọn đã được cập nhật
+                                options.callback(dropdown.selectedItems)
+                            end
+                        end
+                    end)
+                end
                 
                 -- Xử lý click vào dropdown chính
                 Library:connection(ACTIVECHOICE.InputBegan, function(input)
@@ -2784,33 +2726,6 @@ ab.AddWindow = function (options)
                     end
                 end
                 
-                -- Thêm phương thức UpdateList để cập nhật danh sách lựa chọn
-                function dropdown:UpdateList(newList)
-                    options.list = newList
-                    
-                    -- Xóa các lựa chọn không còn tồn tại trong danh sách mới
-                    local newSelectedItems = {}
-                    for _, selectedItem in ipairs(dropdown.selectedItems) do
-                        for _, newItem in ipairs(newList) do
-                            if selectedItem == newItem then
-                                table.insert(newSelectedItems, selectedItem)
-                                break
-                            end
-                        end
-                    end
-                    
-                    dropdown.selectedItems = newSelectedItems
-                    
-                    -- Cập nhật hiển thị
-                    ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected"
-                    
-                    -- Tạo lại các lựa chọn
-                    rebuildChoices()
-                    
-                    -- Gọi callback với danh sách các lựa chọn đã được cập nhật
-                    options.callback(dropdown.selectedItems)
-                end
-                
                 -- Gọi callback với giá trị mặc định
                 if dropdown.multi then
                     options.callback(dropdown.selectedItems)
@@ -2821,21 +2736,27 @@ ab.AddWindow = function (options)
                 return dropdown
             end
             
-            -- List element
+            -- List element (Tương tự, cũng tự động cập nhật)
             function section:AddList(options)
                 options = Library:validate({
                     default = 1,
                     list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
                     callback = function(active) end,
-                    dataSource = nil -- Thêm tham số dataSource để tự động cập nhật
+                    updateRate = 1 -- Tần suất cập nhật tự động (giây)
                 }, options or {})
                 
                 options.default = options.default or 1
                 
+                -- Kiểm tra xem list có phải là một hàm không (để tự động cập nhật)
+                local listFunction = nil
+                if type(options.list) == "function" then
+                    listFunction = options.list
+                    options.list = listFunction() -- Lấy giá trị ban đầu
+                end
+                
                 local List = {
                     CurrentChoice = nil,
-                    dataSource = options.dataSource, -- Lưu trữ tham chiếu đến dataSource
-                    updateId = "list_" .. tick() .. math.random() -- ID duy nhất cho cập nhật
+                    choiceElements = {} -- Lưu trữ tham chiếu đến các phần tử lựa chọn
                 }
                 
                 local LISTCONTAINER = Library:Create("Frame", {
@@ -2902,35 +2823,127 @@ ab.AddWindow = function (options)
                         end
                     end
                     
+                    -- Xóa bảng tham chiếu cũ
+                    List.choiceElements = {}
+                    
                     -- Tạo lại các lựa chọn mới
                     for _, name in ipairs(options.list) do
-                        List:AddChoice(name)
+                        local CHOICE = Library:Create("Frame", {
+                            Size = UDim2.new(1,-2,0,15),
+                            Parent = CHOICEHOLDER,
+                            AnchorPoint = Vector2.new(0.5,0),
+                            BackgroundTransparency = 1,
+                            BorderSizePixel = 0,
+                            ZIndex = 100,
+                        })
+            
+                        local CHOICETEXT = Library:Create("TextLabel", {
+                            Size = UDim2.new(1,0,1,0),
+                            Parent = CHOICE,
+                            AnchorPoint = Vector2.new(0.5,0),
+                            Position = UDim2.new(0.5, 0, 0, 0),
+                            BackgroundTransparency = 1,
+                            FontFace = Library.Font,
+                            Text = name,
+                            TextColor3 = Library.Colors.ElementInactive,
+                            TextSize = 8,
+                            Name = name,
+                        })
+                        
+                        local CHOICEBAR = Library:Create("Frame", {
+                            Parent = CHOICE,
+                            Size = UDim2.new(0,0,0,1),
+                            AnchorPoint = Vector2.new(0.5, 0.5),
+                            Position = UDim2.new(0.5, 0, 0.5, 5),
+                            BackgroundTransparency = 0.5,
+                            BackgroundColor3 = Library.Colors.Accent,
+                            BorderSizePixel = 0
+                        })
+                        
+                        -- Lưu trữ tham chiếu đến các phần tử của lựa chọn
+                        List.choiceElements[name] = {
+                            text = CHOICETEXT,
+                            bar = CHOICEBAR
+                        }
+                        
+                        -- Highlight lựa chọn hiện tại
+                        if List.CurrentChoice == name then 
+                            CHOICETEXT.TextColor3 = Library.Colors.Accent
+                            CHOICEBAR.BackgroundTransparency = 0.5
+                            CHOICEBAR.Size = UDim2.new(0,35,0,1)
+                        end
+                        
+                        -- Choice functionality
+                        local choice = {
+                            Name = name,
+                            Hover = false,
+                            Active = false,
+                        }
+                        
+                        Library:connection(CHOICE.MouseEnter, function()
+                            if List.CurrentChoice ~= choice.Name then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                            end
+                            choice.Hover = true
+                        end)
+                        
+                        Library:connection(CHOICE.MouseLeave, function()
+                            if List.CurrentChoice ~= choice.Name then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
+                            end
+                            choice.Hover = false
+                        end)
+                        
+                        Library:connection(_uis.InputBegan, function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                if choice.Hover then
+                                    Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+                                    Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                                    List.CurrentChoice = choice.Name
+                                    options.callback(choice.Name)
+                                end
+                            end
+                        end)
                     end
                 end
                 
-                -- Đăng ký callback cập nhật nếu có dataSource
-                if List.dataSource then
-                    Library:RegisterUpdateCallback(List.dataSource, List.updateId, function(newList)
-                        -- Cập nhật danh sách lựa chọn
-                        options.list = newList
-                        
-                        -- Kiểm tra xem lựa chọn hiện tại có còn trong danh sách không
-                        local currentChoiceExists = false
-                        for _, item in ipairs(newList) do
-                            if item == List.CurrentChoice then
-                                currentChoiceExists = true
-                                break
+                -- Thiết lập cập nhật tự động nếu list là một hàm
+                if listFunction then
+                    local lastUpdateTime = 0
+                    local updateConnection = Library:connection(_runservice.Heartbeat, function()
+                        local currentTime = tick()
+                        if currentTime - lastUpdateTime >= options.updateRate then
+                            lastUpdateTime = currentTime
+                            
+                            local newList = listFunction()
+                            -- So sánh danh sách cũ và mới
+                            local currentListString = table.concat(options.list, "|")
+                            local newListString = table.concat(newList, "|")
+                            
+                            if currentListString ~= newListString then
+                                options.list = newList
+                                
+                                -- Kiểm tra xem lựa chọn hiện tại có còn trong danh sách không
+                                local currentChoiceExists = false
+                                for _, item in ipairs(newList) do
+                                    if item == List.CurrentChoice then
+                                        currentChoiceExists = true
+                                        break
+                                    end
+                                end
+                                
+                                -- Nếu không còn, chọn lựa chọn đầu tiên
+                                if not currentChoiceExists and #newList > 0 then
+                                    List.CurrentChoice = newList[1]
+                                    options.callback(List.CurrentChoice)
+                                end
+                                
+                                -- Tạo lại các lựa chọn
+                                rebuildChoices()
                             end
                         end
-                        
-                        -- Nếu không còn, chọn lựa chọn đầu tiên
-                        if not currentChoiceExists and #newList > 0 then
-                            List.CurrentChoice = newList[1]
-                            options.callback(List.CurrentChoice)
-                        end
-                        
-                        -- Tạo lại các lựa chọn
-                        rebuildChoices()
                     end)
                 end
                 
@@ -2941,108 +2954,8 @@ ab.AddWindow = function (options)
                     List.MouseInside = false
                 end)
                 
-                function List:AddChoice(name)
-                    local CHOICE = Library:Create("Frame", {
-                        Size = UDim2.new(1,-2,0,15),
-                        Parent = CHOICEHOLDER,
-                        AnchorPoint = Vector2.new(0.5,0),
-                        BackgroundTransparency = 1,
-                        BorderSizePixel = 0,
-                        ZIndex = 100,
-                    })
-        
-                    local CHOICETEXT = Library:Create("TextLabel", {
-                        Size = UDim2.new(1,0,1,0),
-                        Parent = CHOICE,
-                        AnchorPoint = Vector2.new(0.5,0),
-                        Position = UDim2.new(0.5, 0, 0, 0),
-                        BackgroundTransparency = 1,
-                        FontFace = Library.Font,
-                        Text = name,
-                        TextColor3 = Library.Colors.ElementInactive,
-                        TextSize = 8,
-                        Name = name,
-                    })
-                    
-                    local CHOICEBAR = Library:Create("Frame", {
-                        Parent = CHOICE,
-                        Size = UDim2.new(0,0,0,1),
-                        AnchorPoint = Vector2.new(0.5, 0.5),
-                        Position = UDim2.new(0.5, 0, 0.5, 5),
-                        BackgroundTransparency = 0.5,
-                        BackgroundColor3 = Library.Colors.Accent,
-                        BorderSizePixel = 0
-                    })
-                    
-                    -- Choice functionality
-                    local choice = {
-                        Name = name,
-                        Hover = false,
-                        Active = false,
-                    }
-                    
-                    if List.CurrentChoice == choice.Name then 
-                        choice.Active = true 
-                    end
-                    
-                    Library:connection(CHOICE.MouseEnter, function()
-                        if List.CurrentChoice ~= choice.Name then
-                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                        end
-                        choice.Hover = true
-                    end)
-                    
-                    Library:connection(CHOICE.MouseLeave, function()
-                        if List.CurrentChoice ~= choice.Name then
-                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                        end
-                        choice.Hover = false
-                    end)
-                    
-                    Library:connection(_uis.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            if choice.Hover then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                                List.CurrentChoice = choice.Name
-                                options.callback(choice.Name)
-                            elseif List.MouseInside then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                            end
-                        end
-                    end)
-                end
-                
-                -- Thêm phương thức UpdateList để cập nhật danh sách lựa chọn
-                function List:UpdateList(newList)
-                    options.list = newList
-                    
-                    -- Kiểm tra xem lựa chọn hiện tại có còn trong danh sách không
-                    local currentChoiceExists = false
-                    for _, item in ipairs(newList) do
-                        if item == List.CurrentChoice then
-                            currentChoiceExists = true
-                            break
-                        end
-                    end
-                    
-                    -- Nếu không còn, chọn lựa chọn đầu tiên
-                    if not currentChoiceExists and #newList > 0 then
-                        List.CurrentChoice = newList[1]
-                        options.callback(List.CurrentChoice)
-                    end
-                    
-                    -- Tạo lại các lựa chọn
-                    rebuildChoices()
-                end
-                
                 -- Tạo các lựa chọn ban đầu
-                for _,v in pairs(options.list) do
-                    List:AddChoice(v)
-                end
+                rebuildChoices()
                 
                 return List
             end
