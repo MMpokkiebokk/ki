@@ -2559,6 +2559,90 @@ ab.AddWindow = function (options)
                     BLOCKINPUT.Visible = false
                 end)
                 
+                -- Thêm phương thức Set để cập nhật giá trị từ bên ngoài
+                function dropdown:Set(value)
+                    if dropdown.multi then
+                        -- Xử lý multi-select
+                        if type(value) == "table" then
+                            -- Xóa tất cả các lựa chọn hiện tại
+                            dropdown.selectedItems = {}
+                            
+                            -- Thêm các lựa chọn mới (kiểm tra giới hạn max)
+                            for _, v in ipairs(value) do
+                                if #dropdown.selectedItems < dropdown.max then
+                                    -- Kiểm tra xem giá trị có trong danh sách không
+                                    for _, item in ipairs(options.list) do
+                                        if item == v then
+                                            table.insert(dropdown.selectedItems, v)
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                            
+                            -- Cập nhật hiển thị
+                            ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected"
+                            
+                            -- Cập nhật giao diện cho các lựa chọn
+                            for choiceName, elements in pairs(dropdown.choiceElements) do
+                                local isCurrentlySelected = false
+                                for _, selected in ipairs(dropdown.selectedItems) do
+                                    if selected == choiceName then
+                                        isCurrentlySelected = true
+                                        break
+                                    end
+                                end
+                                
+                                if isCurrentlySelected then
+                                    Library:tween(elements.text, {TextColor3 = Library.Colors.Accent})
+                                    Library:tween(elements.bar, {Size = UDim2.new(0,25,0,1), BackgroundTransparency = 0.5})
+                                else
+                                    Library:tween(elements.text, {TextColor3 = Library.Colors.ElementInactive})
+                                    Library:tween(elements.bar, {Size = UDim2.new(0,0,0,1), BackgroundTransparency = 0.5})
+                                end
+                            end
+                            
+                            -- Gọi callback với danh sách các lựa chọn
+                            options.callback(dropdown.selectedItems)
+                        end
+                    else
+                        -- Xử lý single-select
+                        if type(value) == "string" then
+                            -- Kiểm tra xem giá trị có trong danh sách không
+                            for _, item in ipairs(options.list) do
+                                if item == value then
+                                    dropdown.selectedItems = {value}
+                                    ACTIVETEXT.Text = value
+                                    
+                                    -- Cập nhật giao diện cho các lựa chọn
+                                    for choiceName, elements in pairs(dropdown.choiceElements) do
+                                        if choiceName == value then
+                                            Library:tween(elements.text, {TextColor3 = Library.Colors.Accent})
+                                            Library:tween(elements.bar, {Size = UDim2.new(0,25,0,1), BackgroundTransparency = 0.5})
+                                        else
+                                            Library:tween(elements.text, {TextColor3 = Library.Colors.ElementInactive})
+                                            Library:tween(elements.bar, {Size = UDim2.new(0,0,0,1), BackgroundTransparency = 0.5})
+                                        end
+                                    end
+                                    
+                                    -- Gọi callback với giá trị mới
+                                    options.callback(value)
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                -- Thêm phương thức Get để lấy giá trị hiện tại
+                function dropdown:Get()
+                    if dropdown.multi then
+                        return dropdown.selectedItems
+                    else
+                        return dropdown.selectedItems[1] or ""
+                    end
+                end
+                
                 -- Gọi callback với giá trị mặc định
                 if dropdown.multi then
                     options.callback(dropdown.selectedItems)
