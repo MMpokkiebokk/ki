@@ -27,6 +27,7 @@ local Library = {
     Connections = {},
     Font = nil,
     DynamicLists = {}, -- Lưu trữ các danh sách cần cập nhật tự động
+    HeartbeatConnections = {}, -- Lưu trữ các kết nối Heartbeat
 }
 
 -- Font registration function
@@ -90,6 +91,11 @@ function Library:unload()
             v:Disconnect() 
         end 
     end
+    for _,v in next, self.HeartbeatConnections do 
+        if v then 
+            v:Disconnect() 
+        end 
+    end
 end
 
 function Library:tween(object, goal, callback)
@@ -123,22 +129,54 @@ function lerp(startValue, endValue, duration, callback)
     end
 end
 
--- Hàm cập nhật tự động cho các danh sách động
-function Library:RegisterDynamicList(listId, updateFunction)
+-- Hàm cập nhật tự động cho các danh sách động - Sử dụng Heartbeat
+function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
+    updateInterval = updateInterval or 1 -- Mặc định cập nhật mỗi giây
+    
+    -- Nếu đã có kết nối cho listId này, hủy nó trước
+    if Library.HeartbeatConnections[listId] then
+        Library.HeartbeatConnections[listId]:Disconnect()
+        Library.HeartbeatConnections[listId] = nil
+    end
+    
+    local lastUpdate = 0
+    
+    -- Tạo kết nối Heartbeat mới
+    Library.HeartbeatConnections[listId] = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
+        lastUpdate = lastUpdate + deltaTime
+        if lastUpdate >= updateInterval then
+            local success, result = pcall(updateFunction)
+            if success and result then
+                -- Cập nhật danh sách nếu có kết quả
+                if Library.DynamicLists[listId] then
+                    Library.DynamicLists[listId].UpdateList(result)
+                end
+            end
+            lastUpdate = 0
+        end
+    end)
+    
+    -- Lưu trữ thông tin danh sách
     Library.DynamicLists[listId] = {
-        UpdateFunction = updateFunction,
-        LastUpdate = 0
+        UpdateList = nil, -- Sẽ được gán sau
+        LastUpdate = tick()
     }
 end
 
-function Library:UpdateDynamicLists()
-    for listId, listData in pairs(Library.DynamicLists) do
-        local currentTime = tick()
-        if currentTime - listData.LastUpdate > 1 then -- Cập nhật mỗi giây
-            listData.UpdateFunction()
-            listData.LastUpdate = currentTime
-        end
+-- Hàm để gán hàm cập nhật cho danh sách
+function Library:SetDynamicListUpdateFunction(listId, updateFunction)
+    if Library.DynamicLists[listId] then
+        Library.DynamicLists[listId].UpdateList = updateFunction
     end
+end
+
+-- Hàm để hủy đăng ký danh sách động
+function Library:UnregisterDynamicList(listId)
+    if Library.HeartbeatConnections[listId] then
+        Library.HeartbeatConnections[listId]:Disconnect()
+        Library.HeartbeatConnections[listId] = nil
+    end
+    Library.DynamicLists[listId] = nil
 end
 
 local SCREENGUI
@@ -486,9 +524,6 @@ ab.AddWindow = function (options)
         else
             Library:ToggleWatermark(false)
         end 
-        
-        -- Cập nhật các danh sách động
-        Library:UpdateDynamicLists()
     end)
     
     -- Tab creation function
@@ -2305,7 +2340,8 @@ ab.AddWindow = function (options)
                     default = nil,
                     callback = function(active) end,
                     dynamic = false, -- Thêm tùy chọn để bật/tắt cập nhật động
-                    updateFunction = nil -- Hàm để cập nhật danh sách
+                    updateFunction = nil, -- Hàm để cập nhật danh sách
+                    updateInterval = 1 -- Khoảng thời gian cập nhật (giây)
                 }, options or {})
                 
                 -- FIX: Check if list is a function and call it if so
@@ -2626,11 +2662,9 @@ ab.AddWindow = function (options)
                 -- Đăng ký danh sách động nếu được yêu cầu
                 if options.dynamic and options.updateFunction then
                     local listId = "dropdown_" .. options.name
-                    Library:RegisterDynamicList(listId, function()
-                        local newList = options.updateFunction()
-                        if newList then
-                            dropdown:UpdateList(newList)
-                        end
+                    Library:RegisterDynamicList(listId, options.updateFunction, options.updateInterval)
+                    Library:SetDynamicListUpdateFunction(listId, function(newList)
+                        dropdown:UpdateList(newList)
                     end)
                 end
                 
@@ -2697,7 +2731,8 @@ ab.AddWindow = function (options)
                     multi = false, -- Thêm tùy chọn đa lựa chọn
                     max = 40, -- Thêm giới hạn lựa chọn
                     dynamic = false, -- Thêm tùy chọn để bật/tắt cập nhật động
-                    updateFunction = nil -- Hàm để cập nhật danh sách
+                    updateFunction = nil, -- Hàm để cập nhật danh sách
+                    updateInterval = 1 -- Khoảng thời gian cập nhật (giây)
                 }, options or {})
                 
                 -- FIX: Check if list is a function and call it if so
@@ -3017,11 +3052,9 @@ ab.AddWindow = function (options)
                 -- Đăng ký danh sách động nếu được yêu cầu
                 if options.dynamic and options.updateFunction then
                     local listId = "list_" .. options.name
-                    Library:RegisterDynamicList(listId, function()
-                        local newList = options.updateFunction()
-                        if newList then
-                            List:UpdateList(newList)
-                        end
+                    Library:RegisterDynamicList(listId, options.updateFunction, options.updateInterval)
+                    Library:SetDynamicListUpdateFunction(listId, function(newList)
+                        List:UpdateList(newList)
                     end)
                 end
                 
