@@ -599,7 +599,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
