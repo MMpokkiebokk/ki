@@ -2742,322 +2742,321 @@ ab.AddWindow = function (options)
             end
             
             -- List element
-                        -- List element (ĐÃ ĐƯỢC SỬA LỖI)
-                        function section:AddList(options)
-                            options = Library:validate({
-                                default = 1,
-                                list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
-                                callback = function(active) end,
-                                multi = false, -- Thêm tùy chọn đa lựa chọn
-                                max = 40, -- Thêm giới hạn lựa chọn
-                                dynamic = false, -- Thêm tùy chọn để bật/tắt cập nhật động
-                                updateFunction = nil, -- Hàm để cập nhật danh sách
-                                updateInterval = 1 -- Khoảng thời gian cập nhật (giây)
-                            }, options or {})
-                            
-                            -- FIX: Check if list is a function and call it if so
-                            if type(options.list) == "function" then
-                                options.list = options.list()
+                                   -- List element (ĐÃ SỬA LỖI HOÀN TOÀN)
+            function section:AddList(options)
+                options = Library:validate({
+                    default = 1,
+                    list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
+                    callback = function(active) end,
+                    multi = false, -- Thêm tùy chọn đa lựa chọn
+                    max = 40, -- Thêm giới hạn lựa chọn
+                    dynamic = false, -- Thêm tùy chọn để bật/tắt cập nhật động
+                    updateFunction = nil, -- Hàm để cập nhật danh sách
+                    updateInterval = 1 -- Khoảng thời gian cập nhật (giây)
+                }, options or {})
+                
+                -- FIX: Check if list is a function and call it if so
+                if type(options.list) == "function" then
+                    options.list = options.list()
+                end
+
+                -- Ensure it's a table now, otherwise error out
+                if type(options.list) ~= "table" then
+                    warn("AddList: 'list' option must be a table or a function that returns a table.")
+                    options.list = {} -- Default to empty table to prevent further errors
+                end
+                
+                options.default = options.default or 1
+                
+                local List = {
+                    CurrentChoice = options.multi and {} or options.list[options.default],
+                    choices = {}, -- Lưu trữ các lựa chọn để có thể cập nhật sau này
+                    multi = options.multi,
+                    max = options.max,
+                    updateFunction = options.updateFunction
+                }
+                
+                local LISTCONTAINER = Library:Create("Frame", {
+                    Parent = ELEMENTCONTAINER,
+                    Size = UDim2.new(1, 0, 0, 100),
+                    Name = options.name,
+                    BorderSizePixel = 1,
+                    BorderColor3 = Color3.fromRGB(255,255,255),
+                    BackgroundTransparency = 0,
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
+                })
+                
+                Library:Create("UIGradient", {
+                    Parent = LISTCONTAINER,
+                    Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+                    },
+                    Rotation = 90,
+                })
+                
+                -- SỬA LỖI: Cấu hình lại ScrollingFrame để có thể kéo được
+                local CHOICEHOLDER = Library:Create("ScrollingFrame", {
+                    Parent = LISTCONTAINER,
+                    Size = UDim2.new(1,0,1,0),
+                    CanvasSize = UDim2.new(0,0,0,0),
+                    BackgroundTransparency = 1,
+                    ScrollBarThickness = 4, -- Bật thanh cuộn
+                    ScrollBarImageColor3 = Library.Colors.Accent, -- Đặt màu cho thanh cuộn
+                    ScrollingDirection = Enum.ScrollingDirection.Y,
+                    VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+                    AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Tự động tính toán kích thước
+                })
+                
+                Library:Create("UIListLayout", {
+                    Parent = CHOICEHOLDER,
+                    FillDirection = Enum.FillDirection.Vertical,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                    VerticalAlignment = Enum.VerticalAlignment.Top,
+                    Padding = UDim.new(0, 4),
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Name = "ListLayout"
+                })
+
+                -- SỬA LỖI: Đặt hiệu ứng gradient làm con của ScrollingFrame và giảm ZIndex
+                local TRANSPARENCYEFFECT = Library:Create("Frame",{
+                    Parent = CHOICEHOLDER, -- Đặt làm con của CHOICEHOLDER
+                    Size = UDim2.new(1,0,1,0),
+                    BackgroundColor3 = Color3.fromRGB(0,0,0),
+                    BorderSizePixel = 0,
+                    ZIndex = 1, -- Giảm ZIndex để không che nội dung
+                    Active = false, -- Vô hiệu hóa tương tác để không cản trở cuộn
+                })
+                
+                Library:Create("UIGradient", {
+                    Parent = TRANSPARENCYEFFECT,
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(0.8, 0.6),
+                        NumberSequenceKeypoint.new(1, 0),
+                    }),
+                    Rotation = 90
+                })
+                
+                Library:connection(CHOICEHOLDER.MouseEnter, function()
+                    List.MouseInside = true
+                end)
+                Library:connection(CHOICEHOLDER.MouseLeave, function()
+                    List.MouseInside = false
+                end)
+                
+                -- Cải tiến xử lý sự kiện list để tránh lỗi click/swipe
+                local listInputStarted = false
+                
+                Library:connection(LISTCONTAINER.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        UIState.ClickStartTime = tick()
+                        UIState.ClickStartPosition = Vector2.new(input.Position.X, input.Position.Y)
+                        listInputStarted = true
+                    end
+                end)
+                
+                Library:connection(LISTCONTAINER.InputEnded, function(input)
+                    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and listInputStarted then
+                        local clickDuration = tick() - UIState.ClickStartTime
+                        local distance = (Vector2.new(input.Position.X, input.Position.Y) - UIState.ClickStartPosition).Magnitude
+                        
+                        -- Chỉ xử lý click nếu thời gian ngắn và khoảng cách di chuyển nhỏ
+                        if clickDuration < 0.5 and distance < 10 then
+                            -- Xử lý click vào list container
+                        end
+                        listInputStarted = false
+                    end
+                end)
+                
+                -- Hàm để chọn một lựa chọn
+                local function selectChoice(name)
+                    if options.multi then
+                        -- Xử lý đa lựa chọn
+                        local index = table.find(List.CurrentChoice, name)
+                        if index then
+                            -- Nếu đã chọn, bỏ chọn
+                            table.remove(List.CurrentChoice, index)
+                        else
+                            -- Nếu chưa chọn và chưa đạt giới hạn, thêm vào
+                            if #List.CurrentChoice < options.max then
+                                table.insert(List.CurrentChoice, name)
                             end
-            
-                            -- Ensure it's a table now, otherwise error out
-                            if type(options.list) ~= "table" then
-                                warn("AddList: 'list' option must be a table or a function that returns a table.")
-                                options.list = {} -- Default to empty table to prevent further errors
-                            end
-                            
-                            options.default = options.default or 1
-                            
-                            local List = {
-                                CurrentChoice = options.multi and {} or options.list[options.default],
-                                choices = {}, -- Lưu trữ các lựa chọn để có thể cập nhật sau này
-                                multi = options.multi,
-                                max = options.max,
-                                updateFunction = options.updateFunction
-                            }
-                            
-                            local LISTCONTAINER = Library:Create("Frame", {
-                                Parent = ELEMENTCONTAINER,
-                                Size = UDim2.new(1, 0, 0, 100),
-                                Name = options.name,
-                                BorderSizePixel = 1,
-                                BorderColor3 = Color3.fromRGB(255,255,255),
-                                BackgroundTransparency = 0,
-                                LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
-                            })
-                            
-                            Library:Create("UIGradient", {
-                                Parent = LISTCONTAINER,
-                                Color = ColorSequence.new{
-                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-                                },
-                                Rotation = 90,
-                            })
-                            
-                            -- SỬA LỖI: Cấu hình lại ScrollingFrame để có thể kéo được
-                            local CHOICEHOLDER = Library:Create("ScrollingFrame", {
-                                Parent = LISTCONTAINER,
-                                Size = UDim2.new(1,0,1,0),
-                                CanvasSize = UDim2.new(0,0,0,0),
-                                BackgroundTransparency = 1,
-                                ScrollBarThickness = 4, -- Bật thanh cuộn
-                                ScrollBarImageColor3 = Library.Colors.Accent, -- Đặt màu cho thanh cuộn
-                                ScrollingDirection = Enum.ScrollingDirection.Y,
-                                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-                                AutomaticCanvasSize = Enum.AutomaticSize.Y, -- Tự động tính toán kích thước
-                            })
-                            
-                            Library:Create("UIListLayout", {
-                                Parent = CHOICEHOLDER,
-                                FillDirection = Enum.FillDirection.Vertical,
-                                HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                                VerticalAlignment = Enum.VerticalAlignment.Top,
-                                Padding = UDim.new(0, 4),
-                                SortOrder = Enum.SortOrder.LayoutOrder,
-                                Name = "ListLayout"
-                            })
-            
-                            -- SỬA LỖI: Đặt hiệu ứng gradient làm con của ScrollingFrame và giảm ZIndex
-                            local TRANSPARENCYEFFECT = Library:Create("Frame",{
-                                Parent = CHOICEHOLDER, -- Đặt làm con của CHOICEHOLDER
-                                Size = UDim2.new(1,0,1,0),
-                                BackgroundColor3 = Color3.fromRGB(0,0,0),
-                                BorderSizePixel = 0,
-                                ZIndex = 1, -- Giảm ZIndex để không che nội dung
-                                Active = false, -- Vô hiệu hóa tương tác để không cản trở cuộn
-                            })
-                            
-                            Library:Create("UIGradient", {
-                                Parent = TRANSPARENCYEFFECT,
-                                Transparency = NumberSequence.new({
-                                    NumberSequenceKeypoint.new(0, 1),
-                                    NumberSequenceKeypoint.new(0.8, 0.6),
-                                    NumberSequenceKeypoint.new(1, 0),
-                                }),
-                                Rotation = 90
-                            })
-                            
-                            Library:connection(CHOICEHOLDER.MouseEnter, function()
-                                List.MouseInside = true
-                            end)
-                            Library:connection(CHOICEHOLDER.MouseLeave, function()
-                                List.MouseInside = false
-                            end)
-                            
-                            -- Cải tiến xử lý sự kiện list để tránh lỗi click/swipe
-                            local listInputStarted = false
-                            
-                            Library:connection(LISTCONTAINER.InputBegan, function(input)
-                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                    UIState.ClickStartTime = tick()
-                                    UIState.ClickStartPosition = Vector2.new(input.Position.X, input.Position.Y)
-                                    listInputStarted = true
-                                end
-                            end)
-                            
-                            Library:connection(LISTCONTAINER.InputEnded, function(input)
-                                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and listInputStarted then
-                                    local clickDuration = tick() - UIState.ClickStartTime
-                                    local distance = (Vector2.new(input.Position.X, input.Position.Y) - UIState.ClickStartPosition).Magnitude
-                                    
-                                    -- Chỉ xử lý click nếu thời gian ngắn và khoảng cách di chuyển nhỏ
-                                    if clickDuration < 0.5 and distance < 10 then
-                                        -- Xử lý click vào list container
-                                    end
-                                    listInputStarted = false
-                                end
-                            end)
-                            
-                            -- Hàm để chọn một lựa chọn
-                            local function selectChoice(name)
-                                if options.multi then
-                                    -- Xử lý đa lựa chọn
-                                    local index = table.find(List.CurrentChoice, name)
-                                    if index then
-                                        -- Nếu đã chọn, bỏ chọn
-                                        table.remove(List.CurrentChoice, index)
-                                    else
-                                        -- Nếu chưa chọn và chưa đạt giới hạn, thêm vào
-                                        if #List.CurrentChoice < options.max then
-                                            table.insert(List.CurrentChoice, name)
-                                        end
-                                    end
-                                    
-                                    -- Cập nhật giao diện
-                                    for _, choice in ipairs(List.choices) do
-                                        if choice.Name == name then
-                                            if table.find(List.CurrentChoice, name) then
-                                                Library:tween(choice.Text, {TextColor3 = Library.Colors.Accent})
-                                                Library:tween(choice.Bar, {Size = UDim2.new(0,35,0,1)})
-                                            else
-                                                Library:tween(choice.Text, {TextColor3 = Library.Colors.ElementInactive})
-                                                Library:tween(choice.Bar, {Size = UDim2.new(0,0,0,1)})
-                                            end
-                                        end
-                                    end
-                                    
-                                    -- Gọi callback với danh sách các lựa chọn
-                                    options.callback(List.CurrentChoice)
+                        end
+                        
+                        -- Cập nhật giao diện
+                        for _, choice in ipairs(List.choices) do
+                            if choice.Name == name then
+                                if table.find(List.CurrentChoice, name) then
+                                    Library:tween(choice.Text, {TextColor3 = Library.Colors.Accent})
+                                    Library:tween(choice.Bar, {Size = UDim2.new(0,35,0,1)})
                                 else
-                                    -- Xử lý đơn lựa chọn
-                                    List.CurrentChoice = name
-                                    
-                                    -- Cập nhật giao diện
-                                    for _, choice in ipairs(List.choices) do
-                                        if choice.Name == name then
-                                            Library:tween(choice.Text, {TextColor3 = Library.Colors.Accent})
-                                            Library:tween(choice.Bar, {Size = UDim2.new(0,35,0,1)})
-                                        else
-                                            Library:tween(choice.Text, {TextColor3 = Library.Colors.ElementInactive})
-                                            Library:tween(choice.Bar, {Size = UDim2.new(0,0,0,1)})
-                                        end
-                                    end
-                                    
-                                    -- Gọi callback với giá trị mới
-                                    options.callback(name)
+                                    Library:tween(choice.Text, {TextColor3 = Library.Colors.ElementInactive})
+                                    Library:tween(choice.Bar, {Size = UDim2.new(0,0,0,1)})
                                 end
                             end
-                            
-                            -- Hàm để thêm lựa chọn mới
-                            function List:AddChoice(name)
-                                local CHOICE = Library:Create("Frame", {
-                                    Size = UDim2.new(1,-2,0,15),
-                                    Parent = CHOICEHOLDER,
-                                    AnchorPoint = Vector2.new(0.5,0),
-                                    BackgroundTransparency = 1,
-                                    BorderSizePixel = 0,
-                                    ZIndex = 2, -- Đảm bảo ở trên hiệu ứng gradient
-                                })
+                        end
+                        
+                        -- Gọi callback với danh sách các lựa chọn
+                        options.callback(List.CurrentChoice)
+                    else
+                        -- Xử lý đơn lựa chọn
+                        List.CurrentChoice = name
+                        
+                        -- Cập nhật giao diện
+                        for _, choice in ipairs(List.choices) do
+                            if choice.Name == name then
+                                Library:tween(choice.Text, {TextColor3 = Library.Colors.Accent})
+                                Library:tween(choice.Bar, {Size = UDim2.new(0,35,0,1)})
+                            else
+                                Library:tween(choice.Text, {TextColor3 = Library.Colors.ElementInactive})
+                                Library:tween(choice.Bar, {Size = UDim2.new(0,0,0,1)})
+                            end
+                        end
+                        
+                        -- Gọi callback với giá trị mới
+                        options.callback(name)
+                    end
+                end
+                
+                -- Hàm để thêm lựa chọn mới
+                function List:AddChoice(name)
+                    local CHOICE = Library:Create("Frame", {
+                        Size = UDim2.new(1,-2,0,15),
+                        Parent = CHOICEHOLDER,
+                        AnchorPoint = Vector2.new(0.5,0),
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        ZIndex = 2, -- Đảm bảo ở trên hiệu ứng gradient
+                    })
+        
+                    local CHOICETEXT = Library:Create("TextLabel", {
+                        Size = UDim2.new(1,0,1,0),
+                        Parent = CHOICE,
+                        AnchorPoint = Vector2.new(0.5,0),
+                        Position = UDim2.new(0.5, 0, 0, 0),
+                        BackgroundTransparency = 1,
+                        FontFace = Library.Font,
+                        Text = name,
+                        TextColor3 = Library.Colors.ElementInactive,
+                        TextSize = 8,
+                        Name = name,
+                        ZIndex = 2,
+                    })
                     
-                                local CHOICETEXT = Library:Create("TextLabel", {
-                                    Size = UDim2.new(1,0,1,0),
-                                    Parent = CHOICE,
-                                    AnchorPoint = Vector2.new(0.5,0),
-                                    Position = UDim2.new(0.5, 0, 0, 0),
-                                    BackgroundTransparency = 1,
-                                    FontFace = Library.Font,
-                                    Text = name,
-                                    TextColor3 = Library.Colors.ElementInactive,
-                                    TextSize = 8,
-                                    Name = name,
-                                    ZIndex = 2,
-                                })
-                                
-                                local CHOICEBAR = Library:Create("Frame", {
-                                    Parent = CHOICE,
-                                    Size = UDim2.new(0,0,0,1),
-                                    AnchorPoint = Vector2.new(0.5, 0.5),
-                                    Position = UDim2.new(0.5, 0, 0.5, 5),
-                                    BackgroundTransparency = 0.5,
-                                    BackgroundColor3 = Library.Colors.Accent,
-                                    BorderSizePixel = 0,
-                                    ZIndex = 2,
-                                })
-                                
-                                -- Lưu trữ tham chiếu đến lựa chọn
-                                table.insert(List.choices, {
-                                    Name = name,
-                                    Frame = CHOICE,
-                                    Text = CHOICETEXT,
-                                    Bar = CHOICEBAR
-                                })
-                                
-                                -- Choice functionality
-                                local choice = {
-                                    Name = name,
-                                    Hover = false,
-                                    Active = false,
-                                    InputStarted = false
-                                }
-                                
-                                if options.multi then
-                                    -- Kiểm tra nếu trong danh sách đa lựa chọn
-                                    if table.find(List.CurrentChoice, name) then
-                                        choice.Active = true
-                                        CHOICETEXT.TextColor3 = Library.Colors.Accent
-                                        CHOICEBAR.BackgroundTransparency = 0.5
-                                        CHOICEBAR.Size = UDim2.new(0,35,0,1)
-                                    end
-                                else
-                                    -- Kiểm tra nếu là lựa chọn đơn
-                                    if List.CurrentChoice == choice.Name then 
-                                        choice.Active = true
-                                        CHOICETEXT.TextColor3 = Library.Colors.Accent
-                                        CHOICEBAR.BackgroundTransparency = 0.5
-                                        CHOICEBAR.Size = UDim2.new(0,35,0,1)
-                                    end
-                                end
-                                
-                                -- Cải tiến xử lý sự kiện choice để tránh lỗi click/swipe
-                                Library:connection(CHOICE.InputBegan, function(input)
-                                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                        UIState.ClickStartTime = tick()
-                                        UIState.ClickStartPosition = Vector2.new(input.Position.X, input.Position.Y)
-                                        choice.InputStarted = true
-                                    end
-                                end)
-                                
-                                Library:connection(CHOICE.InputEnded, function(input)
-                                    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and choice.InputStarted then
-                                        local clickDuration = tick() - UIState.ClickStartTime
-                                        local distance = (Vector2.new(input.Position.X, input.Position.Y) - UIState.ClickStartPosition).Magnitude
-                                        
-                                        -- Chỉ xử lý click nếu thời gian ngắn và khoảng cách di chuyển nhỏ
-                                        if clickDuration < 0.5 and distance < 10 then
-                                            selectChoice(name)
-                                        end
-                                        choice.InputStarted = false
-                                    end
-                                end)
-                                
-                                Library:connection(CHOICE.MouseEnter, function()
-                                    if options.multi then
-                                        if not table.find(List.CurrentChoice, name) then
-                                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                                        end
-                                    else
-                                        if List.CurrentChoice ~= name then
-                                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                                        end
-                                    end
-                                    choice.Hover = true
-                                end)
-                                
-                                Library:connection(CHOICE.MouseLeave, function()
-                                    if options.multi then
-                                        if not table.find(List.CurrentChoice, name) then
-                                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                                        end
-                                    else
-                                        if List.CurrentChoice ~= name then
-                                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                                            Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
-                                        end
-                                    end
-                                    choice.Hover = false
-                                end)
-                            end
+                    local CHOICEBAR = Library:Create("Frame", {
+                        Parent = CHOICE,
+                        Size = UDim2.new(0,0,0,1),
+                        AnchorPoint = Vector2.new(0.5, 0.5),
+                        Position = UDim2.new(0.5, 0, 0.5, 5),
+                        BackgroundTransparency = 0.5,
+                        BackgroundColor3 = Library.Colors.Accent,
+                        BorderSizePixel = 0,
+                        ZIndex = 2,
+                    })
+                    
+                    -- Lưu trữ tham chiếu đến lựa chọn
+                    table.insert(List.choices, {
+                        Name = name,
+                        Frame = CHOICE,
+                        Text = CHOICETEXT,
+                        Bar = CHOICEBAR
+                    })
+                    
+                    -- Choice functionality
+                    local choice = {
+                        Name = name,
+                        Hover = false,
+                        Active = false,
+                        InputStarted = false
+                    }
+                    
+                    if options.multi then
+                        -- Kiểm tra nếu trong danh sách đa lựa chọn
+                        if table.find(List.CurrentChoice, name) then
+                            choice.Active = true
+                            CHOICETEXT.TextColor3 = Library.Colors.Accent
+                            CHOICEBAR.BackgroundTransparency = 0.5
+                            CHOICEBAR.Size = UDim2.new(0,35,0,1)
+                        end
+                    else
+                        -- Kiểm tra nếu là lựa chọn đơn
+                        if List.CurrentChoice == choice.Name then 
+                            choice.Active = true
+                            CHOICETEXT.TextColor3 = Library.Colors.Accent
+                            CHOICEBAR.BackgroundTransparency = 0.5
+                            CHOICEBAR.Size = UDim2.new(0,35,0,1)
+                        end
+                    end
+                    
+                    -- Cải tiến xử lý sự kiện choice để tránh lỗi click/swipe
+                    Library:connection(CHOICE.InputBegan, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            UIState.ClickStartTime = tick()
+                            UIState.ClickStartPosition = Vector2.new(input.Position.X, input.Position.Y)
+                            choice.InputStarted = true
+                        end
+                    end)
+                    
+                    Library:connection(CHOICE.InputEnded, function(input)
+                        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and choice.InputStarted then
+                            local clickDuration = tick() - UIState.ClickStartTime
+                            local distance = (Vector2.new(input.Position.X, input.Position.Y) - UIState.ClickStartPosition).Magnitude
                             
-                            -- SỬA LỖI: Hàm để xóa tất cả các lựa chọn - Đảm bảo xóa sạch sẽ
-                            function List:ClearChoices()
-                                -- Xóa tất cả các frame con của CHOICEHOLDER
-                                for _, child in ipairs(CHOICEHOLDER:GetChildren()) do
-                                    if child:IsA("Frame") then
-                                        child:Destroy()
-                                    end
-                                end
-                                -- Làm mới bảng choices
-                                List.choices = {}
-                                -- Đặt lại CanvasSize về 0 để tránh lỗi kéo thừa
-                                CHOICEHOLDER.CanvasSize = UDim2.new(0, 0, 0, 0)
+                            -- Chỉ xử lý click nếu thời gian ngắn và khoảng cách di chuyển nhỏ
+                            if clickDuration < 0.5 and distance < 10 then
+                                selectChoice(name)
                             end
-                            
-                            -- SỬA LỖI: Hàm để cập nhật danh sách lựa chọn
-                                           -- SỬA LỖI: Hàm để cập nhật danh sách lựa chọn - Giữ vị trí cuộn
+                            choice.InputStarted = false
+                        end
+                    end)
+                    
+                    Library:connection(CHOICE.MouseEnter, function()
+                        if options.multi then
+                            if not table.find(List.CurrentChoice, name) then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                            end
+                        else
+                            if List.CurrentChoice ~= name then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
+                            end
+                        end
+                        choice.Hover = true
+                    end)
+                    
+                    Library:connection(CHOICE.MouseLeave, function()
+                        if options.multi then
+                            if not table.find(List.CurrentChoice, name) then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
+                            end
+                        else
+                            if List.CurrentChoice ~= name then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
+                            end
+                        end
+                        choice.Hover = false
+                    end)
+                end
+                
+                -- SỬA LỖI: Hàm để xóa tất cả các lựa chọn - Đảm bảo xóa sạch sẽ
+                function List:ClearChoices()
+                    -- Xóa tất cả các frame con của CHOICEHOLDER
+                    for _, child in ipairs(CHOICEHOLDER:GetChildren()) do
+                        if child:IsA("Frame") then
+                            child:Destroy()
+                        end
+                    end
+                    -- Làm mới bảng choices
+                    List.choices = {}
+                    -- Đặt lại CanvasSize về 0 để tránh lỗi kéo thừa
+                    CHOICEHOLDER.CanvasSize = UDim2.new(0, 0, 0, 0)
+                end
+                
+                -- SỬA LỖI: Hàm để cập nhật danh sách lựa chọn - Giữ vị trí cuộn
                 function List:UpdateList(newList)
                     if newList then
                         options.list = newList
@@ -3154,23 +3153,23 @@ ab.AddWindow = function (options)
                         CHOICEHOLDER.CanvasPosition = UDim2.new(0, 0, 0, currentScrollPosition)
                     end
                 end
-                            
-                            -- Thêm các lựa chọn mặc định
-                            for _,v in pairs(options.list) do
-                                List:AddChoice(v)
-                            end
-                            
-                            -- Đăng ký danh sách động nếu được yêu cầu
-                            if options.dynamic and options.updateFunction then
-                                local listId = "list_" .. options.name
-                                Library:RegisterDynamicList(listId, options.updateFunction, options.updateInterval)
-                                Library:SetDynamicListUpdateFunction(listId, function(newList)
-                                    List:UpdateList(newList)
-                                end)
-                            end
-                            
-                            return List
-                        end
+                
+                -- Thêm các lựa chọn mặc định
+                for _,v in pairs(options.list) do
+                    List:AddChoice(v)
+                end
+                
+                -- Đăng ký danh sách động nếu được yêu cầu
+                if options.dynamic and options.updateFunction then
+                    local listId = "list_" .. options.name
+                    Library:RegisterDynamicList(listId, options.updateFunction, options.updateInterval)
+                    Library:SetDynamicListUpdateFunction(listId, function(newList)
+                        List:UpdateList(newList)
+                    end)
+                end
+                
+                return List
+            end
             
             return section
         end
