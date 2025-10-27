@@ -2741,8 +2741,7 @@ ab.AddWindow = function (options)
                 return dropdown
             end
             
-            -- List element
-                                   -- List element (ĐÃ SỬA LỖI HOÀN TOÀN)
+                       -- List element (ĐÃ SỬA LỖI VÀ LÀM SẠCH)
             function section:AddList(options)
                 options = Library:validate({
                     default = 1,
@@ -2818,25 +2817,7 @@ ab.AddWindow = function (options)
                     Name = "ListLayout"
                 })
 
-                -- SỬA LỖI: Đặt hiệu ứng gradient làm con của ScrollingFrame và giảm ZIndex
-                local TRANSPARENCYEFFECT = Library:Create("Frame",{
-                    Parent = CHOICEHOLDER, -- Đặt làm con của CHOICEHOLDER
-                    Size = UDim2.new(1,0,1,0),
-                    BackgroundColor3 = Color3.fromRGB(0,0,0),
-                    BorderSizePixel = 0,
-                    ZIndex = 1, -- Giảm ZIndex để không che nội dung
-                    Active = false, -- Vô hiệu hóa tương tác để không cản trở cuộn
-                })
-                
-                Library:Create("UIGradient", {
-                    Parent = TRANSPARENCYEFFECT,
-                    Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 1),
-                        NumberSequenceKeypoint.new(0.8, 0.6),
-                        NumberSequenceKeypoint.new(1, 0),
-                    }),
-                    Rotation = 90
-                })
+                -- (ĐÃ XÓA) UI Gradient thừa đã được loại bỏ khỏi đây để làm sạch giao diện
                 
                 Library:connection(CHOICEHOLDER.MouseEnter, function()
                     List.MouseInside = true
