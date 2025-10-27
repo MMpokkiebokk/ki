@@ -119,13 +119,20 @@ function lerp(startValue, endValue, duration, callback)
     end
 end
 
--- Hàm so sánh hai bảng để kiểm tra thay đổi
+-- Hàm so sánh hai bảng để kiểm tra thay đổi (ĐÃ SỬA)
 local function areTablesEqual(t1, t2)
+    if type(t1) ~= "table" or type(t2) ~= "table" then return t1 == t2 end
     if #t1 ~= #t2 then return false end
-    local sorted1 = table.clone(t1)
-    local sorted2 = table.clone(t2)
+    
+    -- Tạo bản sao để không ảnh hưởng đến bảng gốc
+    local sorted1 = {}
+    local sorted2 = {}
+    for i, v in ipairs(t1) do sorted1[i] = v end
+    for i, v in ipairs(t2) do sorted2[i] = v end
+    
     table.sort(sorted1)
     table.sort(sorted2)
+    
     for i = 1, #sorted1 do
         if sorted1[i] ~= sorted2[i] then
             return false
@@ -1153,20 +1160,36 @@ ab.AddWindow = function (options)
                     Name = "ButtonTitle"
                 })
                 
-                -- Button functionality
+                -- Button functionality (ĐÃ SỬA)
+                local isHovering = false
+                local isPressed = false
+                
                 Library:connection(BUTTON.MouseEnter, function()
+                    isHovering = true
                     Library:tween(BUTTONTITLE, {TextColor3 = Library.Colors.ElementActive})
-                    local input = Library:connection(_uis.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            options.callback()
-                        end
-                    end)
-                    local leave
-                    leave = Library:connection(BUTTON.MouseLeave, function()
-                        input:Disconnect()
-                        leave:Disconnect()
+                end)
+                
+                Library:connection(BUTTON.MouseLeave, function()
+                    isHovering = false
+                    if not isPressed then
                         Library:tween(BUTTONTITLE, {TextColor3 = Library.Colors.ElementInactive})
-                    end)
+                    end
+                end)
+                
+                Library:connection(_uis.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 and isHovering then
+                        isPressed = true
+                        options.callback()
+                    end
+                end)
+                
+                Library:connection(_uis.InputEnded, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 and isPressed then
+                        isPressed = false
+                        if not isHovering then
+                            Library:tween(BUTTONTITLE, {TextColor3 = Library.Colors.ElementInactive})
+                        end
+                    end
                 end)
                 
                 return
@@ -1341,35 +1364,51 @@ ab.AddWindow = function (options)
                     Name = "elementlayout",
                 })
                 
-                -- Toggle functionality
+                -- Toggle functionality (ĐÃ SỬA)
+                local isHovering = false
+                local isPressed = false
+                
                 Library:connection(TOGGLE.MouseEnter, function()
+                    isHovering = true
                     Library:tween(TOGGLE_OUTLINE, {Color = Library.Colors.Accent})
-                    local input = Library:connection(_uis.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            toggle.State = not toggle.State
-                            options.callback(toggle.State)
-                            if toggle.State then
-                                Library:tween(TOGGLE, {BackgroundColor3 = Library.Colors.Accent})
-                                Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.ElementActive})
-                            else
-                                Library:tween(TOGGLE, {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
-                                Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.ElementInactive})
-                            end
-                            if toggle.State and options.risky then
-                                Library:tween(TOGGLE, {BackgroundColor3 = Library.Colors.Accent})
-                                Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.RiskyActive})
-                            elseif options.risky then
-                                Library:tween(TOGGLE, {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
-                                Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.RiskyInactive})
-                            end
-                        end
-                    end)
-                    local leave
-                    leave = Library:connection(TOGGLE.MouseLeave, function()
-                        input:Disconnect()
-                        leave:Disconnect()
+                end)
+                
+                Library:connection(TOGGLE.MouseLeave, function()
+                    isHovering = false
+                    if not isPressed then
                         Library:tween(TOGGLE_OUTLINE, {Color = Color3.fromRGB(0, 0, 0)})
-                    end)
+                    end
+                end)
+                
+                Library:connection(_uis.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 and isHovering then
+                        isPressed = true
+                        toggle.State = not toggle.State
+                        options.callback(toggle.State)
+                        if toggle.State then
+                            Library:tween(TOGGLE, {BackgroundColor3 = Library.Colors.Accent})
+                            Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.ElementActive})
+                        else
+                            Library:tween(TOGGLE, {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
+                            Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.ElementInactive})
+                        end
+                        if toggle.State and options.risky then
+                            Library:tween(TOGGLE, {BackgroundColor3 = Library.Colors.Accent})
+                            Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.RiskyActive})
+                        elseif options.risky then
+                            Library:tween(TOGGLE, {BackgroundColor3 = Color3.fromRGB(20, 20, 20)})
+                            Library:tween(TOGGLETITLE, {TextColor3 = Library.Colors.RiskyInactive})
+                        end
+                    end
+                end)
+                
+                Library:connection(_uis.InputEnded, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 and isPressed then
+                        isPressed = false
+                        if not isHovering then
+                            Library:tween(TOGGLE_OUTLINE, {Color = Color3.fromRGB(0, 0, 0)})
+                        end
+                    end
                 end)
                 
                 -- Set initial state
@@ -2517,13 +2556,11 @@ ab.AddWindow = function (options)
                             end
                         end
                         
-                        -- Xử lý click
-                        CLICKABLE.MouseButton1Click:Connect(function()
-                            selectChoice(name)
-                        end)
+                        -- Xử lý click (ĐÃ SỬA)
+                        local isHovering = false
                         
-                        -- Xử lý hover
                         CLICKABLE.MouseEnter:Connect(function()
+                            isHovering = true
                             if dropdown.multi then
                                 if not table.find(dropdown.active, name) then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
@@ -2538,6 +2575,7 @@ ab.AddWindow = function (options)
                         end)
                         
                         CLICKABLE.MouseLeave:Connect(function()
+                            isHovering = false
                             if dropdown.multi then
                                 if not table.find(dropdown.active, name) then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
@@ -2548,6 +2586,12 @@ ab.AddWindow = function (options)
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
                                     Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
                                 end
+                            end
+                        end)
+                        
+                        CLICKABLE.MouseButton1Click:Connect(function()
+                            if isHovering then
+                                selectChoice(name)
                             end
                         end)
                     end
@@ -2620,9 +2664,19 @@ ab.AddWindow = function (options)
                     table.insert(Library.DynamicElements, dropdown)
                 end
                 
-                -- Xử lý click vào dropdown chính
-                Library:connection(ACTIVECHOICE.InputBegan, function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                -- Xử lý click vào dropdown chính (ĐÃ SỬA)
+                local isHovering = false
+                
+                Library:connection(ACTIVECHOICE.MouseEnter, function()
+                    isHovering = true
+                end)
+                
+                Library:connection(ACTIVECHOICE.MouseLeave, function()
+                    isHovering = false
+                end)
+                
+                Library:connection(_uis.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 and isHovering then
                         dropdown.state = not dropdown.state
                         
                         if dropdown.state then
@@ -2876,54 +2930,42 @@ ab.AddWindow = function (options)
                             end
                         end
                         
-                        -- Choice functionality
-                        local choice = {
-                            Name = name,
-                            Hover = false,
-                            Active = false,
-                        }
-                        
-                        if List.CurrentChoice == choice.Name then 
-                            choice.Active = true 
-                        end
+                        -- Choice functionality (ĐÃ SỬA)
+                        local isHovering = false
                         
                         Library:connection(CHOICE.MouseEnter, function()
+                            isHovering = true
                             if List.multi then
                                 if not table.find(List.SelectedChoices, name) then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
                                     Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
                                 end
                             else
-                                if List.CurrentChoice ~= choice.Name then
+                                if List.CurrentChoice ~= name then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
                                     Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
                                 end
                             end
-                            choice.Hover = true
                         end)
                         
                         Library:connection(CHOICE.MouseLeave, function()
+                            isHovering = false
                             if List.multi then
                                 if not table.find(List.SelectedChoices, name) then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
                                     Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
                                 end
                             else
-                                if List.CurrentChoice ~= choice.Name then
+                                if List.CurrentChoice ~= name then
                                     Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
                                     Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1)})
                                 end
                             end
-                            choice.Hover = false
                         end)
                         
                         Library:connection(_uis.InputBegan, function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                if choice.Hover then
-                                    selectChoice(name)
-                                elseif List.MouseInside then
-                                    -- Không làm gì cả
-                                end
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 and isHovering then
+                                selectChoice(name)
                             end
                         end)
                     end
