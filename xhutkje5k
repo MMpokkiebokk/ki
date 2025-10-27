@@ -1,3 +1,33 @@
+
+
+Chào bạn, lỗi `2991 invalid argument #1 to 'pairs' (table expected,gotfunction)` xảy ra khi bạn cố gắng sử dụng hàm `pairs()` để lặp qua một biến không phải là bảng (table), mà trong trường hợp này là một hàm (function).
+
+Lỗi này thường xảy ra khi bạn truyền một hàm vào tùy chọn `list` của `AddList` hoặc `AddDropdown` thay vì truyền kết quả trả về của hàm đó.
+
+**Ví dụ gây lỗi:**
+```lua
+-- Giả sử GetPlayers() là một hàm trả về danh sách người chơi
+local myList = section:AddList({
+    name = "Player List",
+    list = GetPlayers,  -- <-- SAI: Truyền hàm trực tiếp
+    callback = function(selected) print(selected) end
+})
+```
+
+**Cách sửa đúng:**
+```lua
+local myList = section:AddList({
+    name = "Player List",
+    list = GetPlayers(),  -- <-- ĐÚNG: Gọi hàm và truyền bảng kết quả
+    callback = function(selected) print(selected) end
+})
+```
+
+Để thư viện trở nên mạnh mẽ hơn và tự động xử lý trường hợp này, tôi đã thêm một đoạn kiểm tra vào các hàm `AddList` và `AddDropdown`. Nếu phát hiện `list` là một hàm, nó sẽ tự động gọi hàm đó để lấy danh sách.
+
+Dưới đây là toàn bộ code đã được sửa lỗi này:
+
+```lua
 game = cloneref(game)
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
@@ -2308,6 +2338,17 @@ ab.AddWindow = function (options)
                     updateFunction = nil -- Hàm để cập nhật danh sách
                 }, options or {})
                 
+                -- FIX: Check if list is a function and call it if so
+                if type(options.list) == "function" then
+                    options.list = options.list()
+                end
+
+                -- Ensure it's a table now, otherwise error out
+                if type(options.list) ~= "table" then
+                    warn("AddDropdown: 'list' option must be a table or a function that returns a table.")
+                    options.list = {} -- Default to empty table to prevent further errors
+                end
+                
                 dropdownindex = dropdownindex - 1
                 
                 -- Xử lý default value
@@ -2688,6 +2729,17 @@ ab.AddWindow = function (options)
                     dynamic = false, -- Thêm tùy chọn để bật/tắt cập nhật động
                     updateFunction = nil -- Hàm để cập nhật danh sách
                 }, options or {})
+                
+                -- FIX: Check if list is a function and call it if so
+                if type(options.list) == "function" then
+                    options.list = options.list()
+                end
+
+                -- Ensure it's a table now, otherwise error out
+                if type(options.list) ~= "table" then
+                    warn("AddList: 'list' option must be a table or a function that returns a table.")
+                    options.list = {} -- Default to empty table to prevent further errors
+                end
                 
                 options.default = options.default or 1
                 
@@ -3092,3 +3144,4 @@ ab.AddWindow = function (options)
     return menu
 end 
 return ab.AddWindow()
+```
