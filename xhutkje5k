@@ -1,4 +1,5 @@
 game = cloneref(game)
+
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
@@ -45,6 +46,58 @@ function Library:Register_Font(Name, Weight, Style, Asset)
     writefile(Name .. ".font", _http:JSONEncode(Data))
     return getcustomasset(Name .. ".font")
 end
+
+-- TẠO DANH SÁCH ĐỘNG (Phần quan trọng)
+function Library:CreateDynamicList(initialData)
+    local dynamicList = {}
+    local internalList = initialData or {}
+    local updateSignal = Instance.new("BindableEvent")
+
+    dynamicList.Updated = updateSignal.Event
+
+    function dynamicList:GetList()
+        return internalList
+    end
+
+    function dynamicList:Add(value)
+        table.insert(internalList, value)
+        updateSignal:Fire("add", value, internalList)
+    end
+
+    function dynamicList:RemoveByValue(value)
+        for i = #internalList, 1, -1 do
+            if internalList[i] == value then
+                table.remove(internalList, i)
+                updateSignal:Fire("remove", value, internalList)
+                return
+            end
+        end
+    end
+    
+    function dynamicList:RemoveByIndex(index)
+        local value = internalList[index]
+        if value then
+            table.remove(internalList, index)
+            updateSignal:Fire("remove", value, internalList)
+        end
+    end
+
+    function dynamicList:Clear()
+        internalList = {}
+        updateSignal:Fire("clear", nil, internalList)
+    end
+    
+    function dynamicList:Set(newList)
+        internalList = newList or {}
+        updateSignal:Fire("set", nil, internalList)
+    end
+    
+    -- Đây là định danh để kiểm tra
+    dynamicList.__isDynamicList = true
+
+    return dynamicList
+end
+
 -- Helper functions
 function Library:Create(Class, Properties, Secure)
     local _Instance
@@ -196,7 +249,7 @@ ab.AddWindow = function (options)
     })
     
     local originalBorderColor = Library.Colors.BorderColor
-    local originalTextColor = Color3 fromRGB(255, 255, 255)
+    local originalTextColor = Color3.fromRGB(255, 255, 255)
     local isHovering = false
     
     -- Watermark interactions
@@ -213,7 +266,7 @@ ab.AddWindow = function (options)
     Library:connection(WATERMARK_TEXT.MouseButton1Click, function()
         WINDOW.Visible = not WINDOW.Visible
         if not WINDOW.Visible and not isHovering then
-            Library:tween(WATERMARK_TEXT, {BorderColor3 = Library.Colors.Accent, TextColor3 = Library.Colors.Accent})
+            Library:tween(WATERMARK_TEXT, {BorderColor3 =  originalBorderColor, TextColor3 = originalTextColor})
         end
     end)
     
@@ -301,7 +354,7 @@ ab.AddWindow = function (options)
     Library:Create("TextLabel", { 
         Parent = TOPBAR,
         Size = UDim2.new(0, 0, 1, 0),
-        Position = UDim2.new(1,-6,0,0.5,0.5),
+        Position = UDim2.new(1,-6,0,0.5),
         AnchorPoint = Vector2.new(1,0.5),
         TextColor3 = Library.Colors.TopText,
         BorderSizePixel = 0,
@@ -357,7 +410,7 @@ ab.AddWindow = function (options)
         ScrollBarThickness = 4,
         ScrollBarImageColor3 = Library.Colors.Accent,
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+        VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     })
     
@@ -537,7 +590,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -567,7 +620,7 @@ ab.AddWindow = function (options)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = Library.Colors.Accent,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
         })
         
@@ -624,7 +677,7 @@ ab.AddWindow = function (options)
             
             Library:tween(TABTEXT, {Position = UDim2.new(0,18,0.5,0),})
             Library:tween(TABBAR, {Position = UDim2.new(0,6,0.5,0),})
-            Library:tween(TAB_OVERLAY, {Position = UDim2.new(0,6,0,0,0),})
+            Library:tween(TAB_OVERLAY, {Position = UDim2.new(0,6,0,0),})
             Library:tween(TABTEXT, {TextColor3 = Library.Colors.TabActive})
             Library:tween(TABBAR, {BackgroundTransparency = 0})
             menu.CurrentTab = TAB
@@ -710,7 +763,7 @@ ab.AddWindow = function (options)
                 Library:Create("UIGradient", { 
                     Parent = SUBTABCONTAINER,
                     Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30),
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
                         ColorSequenceKeypoint.new(0.7, Library.Colors.Section),
                         ColorSequenceKeypoint.new(1, Library.Colors.Section)
                     },
@@ -790,7 +843,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
             
@@ -806,7 +859,7 @@ ab.AddWindow = function (options)
                 ScrollBarThickness = 4,
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
 
@@ -901,7 +954,7 @@ ab.AddWindow = function (options)
             return subtab
         end
         
-        -- AddSection giữ nguyên cấu trúcúc gốc
+        -- AddSection giữ nguyên cấu trúc gốc
         function tab:AddSection(options)
             options = Library:validate({
                 tab = nil,
@@ -913,7 +966,7 @@ ab.AddWindow = function (options)
             local section = { Hover = false, }
             
             local sectionHeight = options.height
-            if type(sectionHeight) == "string") then
+            if type(sectionHeight) == "string" then
                 if sectionHeight == "fill" then
                     sectionHeight = UDim.new(0, 200) 
                 elseif sectionHeight == "half" then
@@ -1007,7 +1060,7 @@ ab.AddWindow = function (options)
                 ScrollBarImageColor3 = Library.Colors.Accent,
                 BorderSizePixel = 0,
                 ScrollingDirection = Enum.ScrollingDirection.Y,
-                VerticalScrollBarInset = Enum.ScrollingInset.ScrollBar,
+                VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
             })
             
@@ -1402,7 +1455,7 @@ ab.AddWindow = function (options)
                         Parent = KEYBINDTEXTBOX,
                         CornerRadius = UDim.new(0, 4)
                     })
-                    
+                
                     -- Keybind methods
                     function keybind:SetKey(k)
                         if k then
@@ -1442,12 +1495,12 @@ ab.AddWindow = function (options)
                         end
                     end)
                 
-                    Library:connection(KEYBINDTEXT.FocusLost, function(enterPressed)
+                    Library:connection(KEYBINDTEXTBOX.FocusLost, function(enterPressed)
                         if keybind.Connection then
                             keybind.Connection:Disconnect()
                             keybind.Connection = nil
                         end
-                        local text = KEYBINDTEXT.Text:upper()
+                        local text = KEYBINDTEXTBOX.Text:upper()
                         if #text == 1 then
                             local keyCode = Enum.KeyCode[text]
                             if keyCode then
@@ -1459,7 +1512,6 @@ ab.AddWindow = function (options)
                             keybind:SetKey(nil)
                         end
                     end)
-                end
                 
                     options.callback(keybind:GetKey())
                 
@@ -1583,7 +1635,7 @@ ab.AddWindow = function (options)
                         PaddingBottom = UDim.new(0, 5),
                         PaddingTop = UDim.new(0, 5),
                         PaddingLeft = UDim.new(0, 5),
-                        PaddingRight = UDim.new(0, 5),
+                        PaddingRight = UDim.new(0, 5)
                     })
                     
                     local HUE = Library:Create("ImageLabel", {
@@ -1632,7 +1684,7 @@ ab.AddWindow = function (options)
                         AnchorPoint = Vector2.new(1, 1),
                         Size = UDim2.new(0, 15, 0, 15),
                         BorderColor3 = Color3.fromRGB(0, 0, 0),
-                        Position = UDim2.new(1, 0, 1, 1),
+                        Position = UDim2.new(1, 0, 1, 0),
                         BorderSizePixel = 2,
                     })
                     
@@ -1641,7 +1693,7 @@ ab.AddWindow = function (options)
                         Parent = PREVIEW,
                         Color = ColorSequence.new({
                             ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-                            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(230, 230, 230, 230)),
+                            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(230, 230, 230)),
                             ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
                         }),
                         Rotation = 45
@@ -1708,7 +1760,7 @@ ab.AddWindow = function (options)
                     
                     -- Color picker variables and helper functions
                     local white, black = Color3.new(1,1,1), Color3.new(0,0,0)
-                    local colors = {Color3.new(1,0,0), Color3.new(1,1,0), Color3.new(0,0,1), Color3.new(1,0,1), Color3.new(1,0,1), Color3.new(1,0,1)}
+                    local colors = {Color3.new(1,0,0), Color3.new(1,1,0), Color3.new(0,1,0), Color3.new(0,1,1), Color3.new(0,0,1), Color3.new(1,0,1), Color3.new(1,0,0)}
                     local oldpercentX, oldpercentY = 0, 0
                 
                     -- Common tween function for all pickers
@@ -1760,7 +1812,7 @@ ab.AddWindow = function (options)
                                     draggingConnection:Disconnect()
                                     endConnection:Disconnect()
                                 end
-                            end
+                            end)
                         end
                     end)
                 
@@ -1795,7 +1847,7 @@ ab.AddWindow = function (options)
                                     draggingConnection:Disconnect()
                                     endConnection:Disconnect()
                                 end
-                            end
+                            end)
                         end
                     end)
                     
@@ -1841,7 +1893,7 @@ ab.AddWindow = function (options)
                                     draggingConnection:Disconnect()
                                     endConnection:Disconnect()
                                 end
-                            end
+                            end)
                         end
                     end)
                     
@@ -1853,14 +1905,15 @@ ab.AddWindow = function (options)
                                 if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
                                     updateBrightnessSlider(input.Position.X)
                                 end
-                            end
+                            end)
+                            
                             local endConnection
                             endConnection = Library:connection(_uis.InputEnded, function(input)
                                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                     draggingConnection:Disconnect()
                                     endConnection:Disconnect()
                                 end
-                            end
+                            end)
                         end
                     end)
                     
@@ -1873,7 +1926,7 @@ ab.AddWindow = function (options)
                         end)
                         local leave
                         leave = Library:connection(COPY.MouseLeave, function()
-                            Library:tween(COPYTEXT, {TextColor3 = Color3.fromRGB(255,255,255,255)})
+                            Library:tween(COPYTEXT, {TextColor3 = Color3.fromRGB(255,255,255)})
                             input:Disconnect()
                             leave:Disconnect()
                         end)
@@ -1883,7 +1936,7 @@ ab.AddWindow = function (options)
                         Library:tween(PASTETEXT, {TextColor3 = Library.Colors.Accent})
                         local leave
                         leave = Library:connection(PASTE.MouseLeave, function()
-                            Library:tween(PASTETEXT, {TextColor3 = Color3.fromRGB(255,255,255,255))
+                            Library:tween(PASTETEXT, {TextColor3 = Color3.fromRGB(255,255,255)})
                             leave:Disconnect()
                         end)
                     end)
@@ -1896,11 +1949,9 @@ ab.AddWindow = function (options)
                                 updateValue(color)
                                 BRIGHTNESS.BackgroundColor3 = color
                                 PASTETEXT.Text = r .. "," .. g .. "," .. b
-                                PASTETEXT.Text = r .. "," .. g .. "," .. b
                             end
                         end
-                    end
-                end)
+                    end)
                 
                     -- Initialize with default value
                     updateValue(options.default or Color3.new(1, 1, 1))
@@ -1952,9 +2003,8 @@ ab.AddWindow = function (options)
                 end
                 
                 local SLIDERCONTAINER = Library:Create("Frame", {
-                    Parent = ELEMENTCONTAINER,
                     Size = UDim2.new(1, 0, 0, 20),
-                    Parent = SLIDERCONTAINER,
+                    Parent = ELEMENTCONTAINER,
                     BackgroundTransparency = 1,
                     Name = "SliderContainer",
                     LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
@@ -1963,7 +2013,7 @@ ab.AddWindow = function (options)
                 local SLIDERTITLE = Library:Create("TextLabel", {
                     Parent = SLIDERCONTAINER,
                     Size = UDim2.new(1, -2, 1, -15),
-                    Position = UDim2.new(0, 2, 1, -15),
+                    Position = UDim2.new(0, 2, 0, 0),
                     BackgroundTransparency = 1,
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
@@ -2008,10 +2058,10 @@ ab.AddWindow = function (options)
                 
                 Library:Create("UIGradient", {
                     Parent = SLIDER,
-                    Color = ColorSequence.new({
+                    Color = ColorSequence.new{
                         ColorSequenceKeypoint.new(0.00, Library.Colors.Accent),
                         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27, 27, 55))
-                    }),
+                    },
                     Rotation = 90,
                 })
                 
@@ -2061,7 +2111,7 @@ ab.AddWindow = function (options)
                         local mouseX = mouse.X
                         if mouseX >= SLIDERBACK.AbsolutePosition.X and mouseX <= (SLIDERBACK.AbsolutePosition.X + SLIDERBACK.AbsoluteSize.X) then
                             local output = (mouseX - SLIDERBACK.AbsolutePosition.X) / SLIDERBACK.AbsoluteSize.X
-                            slidervalue = math.clamp(output * (options.max - options.min + options.min) + options.min, options.min, options.min, options.max)
+                            slidervalue = math.clamp(output * (options.max - options.min) + options.min, options.min, options.max)
                         else
                             return
                         end
@@ -2087,27 +2137,24 @@ ab.AddWindow = function (options)
                 end
                 
                 -- Initialize slider
-                SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1), 1)
+                SLIDER.Size = UDim2.fromScale((options.default - options.min) / (options.max - options.min), 1)
                 SLIDERVALUE.Text = options.default .. (options.suffix or "")
                 TEXTBOX.Text = tostring(options.default)
                 
                 -- Hàm để vô hiệu hóa cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
                 local function disableScrolling()
                     findAffectedScrollingFrames()
-                    affectedScrollingFrames = {}
-                    local current = ELEMENTCONTAINER
-                    while current do
-                        if current:IsA("ScrollingFrame") then
-                            table.insert(affectedScrollingFrames, current)
+                    for _, frame in ipairs(affectedScrollingFrames) do
+                        if frame.ScrollingEnabled then
+                            frame.ScrollingEnabled = false
                         end
-                        current = current.Parent
                     end
                 end
                 
                 -- Hàm để khôi phục cuộn trên tất cả các ScrollingFrame bị ảnh hưởng
                 local function enableScrolling()
                     for _, frame in ipairs(affectedScrollingFrames) do
-                        if frame.ScrollingEnabled then
+                        if not frame.ScrollingEnabled then
                             frame.ScrollingEnabled = true
                         end
                     end
@@ -2194,70 +2241,51 @@ ab.AddWindow = function (options)
                     Library:connection(TEXTBOX.MouseLeave, function()
                         Library:tween(TEXTBOX, {BorderColor3 = Library.Colors.BorderColor})
                     end)
-                end)
+                end
                 
                 options.callback(slider:GetValue())
                 
                 return slider 
             end
             
-            -- Dropdown element (PHẦN ĐÃ ĐƯỢC SỬA ĐỂ TỰ ĐỘNG CẬP NHẬP NHẠ)
+           --[[----------------------------------------------------------------------------------------------------------]]
+            --                                          DROPDOWN (ĐÃ NÂNG CẤP)                                              --
+            --[[----------------------------------------------------------------------------------------------------------]]
             function section:AddDropdown(options)
                 options = Library:validate({
                     name = "example dropdown",
-                    list = {"example 1", "example 2", "example 3", "example 4"},
-                    multi = true,
-                    max = 3,
+                    list = {},
+                    multi = false,
+                    max = 1,
                     default = nil,
-                    callback = function(active) end,
-                    updateRate = 1 -- Tần suất cập nhật tự động (giây)
+                    callback = function(active) end
                 }, options or {})
+
+                -- Lấy danh sách thực tế, dù là từ danh sách động hay tĩnh
+                local sourceList = (options.list and options.list.__isDynamicList) and options.list:GetList() or options.list
                 
                 dropdownindex = dropdownindex - 1
                 
-                -- Kiểm tra xem list có phải là một hàm không (để tự động cập nhật)
-                local listFunction = nil
-                if type(options.list) == "function" then
-                    listFunction = options.list
-                    options.list = listFunction() -- Lấy giá trị ban đầu
-                end
-                
-                -- Xử lý default value cho multi-select
                 local defaultValues = {}
                 if options.default then
                     if type(options.default) == "table" then
                         defaultValues = options.default
-                    elseif type(options.default) == "string" then
-                        -- Tìm trong list
-                        for _, v in ipairs(options.list) do
-                            if v == options.default then
-                                defaultValues = {v}
-                                break
-                            end
-                        end
-                    elseif type(options.default) == "number" then
-                        -- Đảm bảo trong phạm vi
-                        local index = math.max(1, math.min(options.default, #options.list)
-                        defaultValues = {options.list[index]}
+                    else
+                        defaultValues = {options.default}
                     end
                 else
-                    -- Mặc định là phần tử đầu tiên nếu có
-                    if #options.list > 0 then
-                        defaultValues = {options.list[1]}
+                    if #sourceList > 0 and not options.multi then
+                        defaultValues = {sourceList[1]}
                     end
                 end
                 
                 local dropdown = {
                     Hover = false,
-                    active = options.multi and defaultValues or defaultValues[1] or "",
                     state = false,
                     multi = options.multi,
-                    max = options.max,
+                    max = options.multi and options.max or 1,
                     selectedItems = defaultValues,
-                    choiceElements = {} -- Lưu trữ tham chiếu đến các phần tử lựa chọn
-                    updateRate = options.updateRate or 1,
-                    lastUpdateTime = 0,
-                    updateConnection = nil
+                    choiceElements = {} -- Lưu trữ các đối tượng UI của lựa chọn
                 }
                 
                 local DROPDOWNCONTAINER = Library:Create("Frame", {
@@ -2269,7 +2297,7 @@ ab.AddWindow = function (options)
                     LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
                 })
                 
-                local DROPDOWNTEXT = Library:Create("TextLabel", {
+                Library:Create("TextLabel", {
                     Size = UDim2.new(1,0,1,-20),
                     Parent = DROPDOWNCONTAINER,
                     Position = UDim2.new(0, 2, 0, -1),
@@ -2282,7 +2310,7 @@ ab.AddWindow = function (options)
                     Name = options.name
                 })
                 
-                local ACTIVECHOICE = Library:Create("Frame", { -- Giữ nguyên Frame để có frame đằng sau
+                local ACTIVECHOICE = Library:Create("Frame", {
                     Size = UDim2.new(1,0,0,15),
                     AnchorPoint = Vector2.new(0.5, 0),
                     Position = UDim2.new(0.5, 0, 0, 13),
@@ -2296,38 +2324,44 @@ ab.AddWindow = function (options)
                 
                 Library:Create("UIGradient", { 
                     Parent = ACTIVECHOICE,
-                    Color = ColorSequence.new({
+                    Color = ColorSequence.new{
                         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
                         ColorSequenceKeypoint.new(0.5, Color3.fromRGB(175, 175, 175)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(145, 145, 145, 145))
-                    }, Rotation = 90,
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(145, 145, 145))
+                    },
+                    Rotation = 90,
                 })
                 
                 local ACTIVETEXT = Library:Create("TextLabel", {
-                    Size = UDim2.new(1,0,0,0,0),
+                    Size = UDim2.new(1, -10, 1, 0),
                     Parent = ACTIVECHOICE,
-                    Position = UDim2.new(0.5, 0, 0, 8),
-                    AnchorPoint = Vector2.new(0.5, 0),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    AnchorPoint = Vector2.new(0.5, 0.5),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Center,
                     FontFace = Library.Font,
-                    Text = options.multi and table.concat(defaultValues, ", ") or (defaultValues[1] or ""),
+                    Text = "", -- Sẽ được cập nhật sau
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
                     Name = "DropdownText",
-                    ZIndex = dropdownindex + 5,
+                    ZIndex = dropdownindex + 6,
                 })
                 
                 local CHOICEHOLDER = Library:Create("ScrollingFrame", {
-                    Size = UDim2.new(1, -1, 0, 0),
-                    CanvasSize = UDim2.new(0,0,10,0),
-                    Position = UDim2.new(0, 0, 0, 14),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    CanvasSize = UDim2.new(0,0,0,0),
+                    Position = UDim2.new(0.5, 0, 1, 0),
+                    AnchorPoint = Vector2.new(0.5, 0),
                     Parent = ACTIVECHOICE,
-                    BackgroundTransparency = 1,
-                    ScrollBarThickness = 0,
+                    BackgroundTransparency = 0.5,
+                    BackgroundColor3 = Color3.fromRGB(20,20,20),
+                    ScrollBarThickness = 3,
+                    ScrollBarImageColor3 = Library.Colors.Accent,
                     Visible = false,
-                    BorderSizePixel = 0,
-                    ZIndex = dropdownindex + 5,
+                    BorderSizePixel = 1,
+                    BorderColor3 = Library.Colors.BorderColor,
+                    ZIndex = dropdownindex + 7,
+                    ClipsDescendants = true
                 })
                 
                 Library:Create("UIListLayout", {
@@ -2335,504 +2369,351 @@ ab.AddWindow = function (options)
                     SortOrder = Enum.SortOrder.LayoutOrder,
                     FillDirection = Enum.FillDirection.Vertical,
                     HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                    Padding = UDim.new(0, 0),
-                    Name = "ChoiceLayout",
+                    Padding = UDim.new(0, 2),
                 })
-                
-                -- Thêm một nút vô hình để chặn đầu vào khi dropdown mở
+                 Library:Create("UIPadding", {
+                    Parent = CHOICEHOLDER,
+                    PaddingTop = UDim.new(0, 3),
+                    PaddingBottom = UDim.new(0, 3),
+                })
+
                 local BLOCKINPUT = Library:Create("TextButton", {
                     Parent = SCREENGUI,
                     Size = UDim2.new(1, 0, 1, 0),
-                    Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = "",
                     Visible = false,
-                    ZIndex = dropdownindex + 4,
-                    Name = "BlockInput_" .. options.name
+                    ZIndex = dropdownindex + 4
                 })
+
+                local function updateActiveText()
+                    local textToShow
+                    if #dropdown.selectedItems > 0 then
+                        textToShow = table.concat(dropdown.selectedItems, ", ")
+                    else
+                        textToShow = options.multi and "None" or (sourceList[1] or "None")
+                    end
+                    ACTIVETEXT.Text = textToShow
+                end
                 
-                -- Hàm để tạo lại các lựa chọn
-                local function rebuildChoices()
-                    -- Xóa tất cả các lựa chọn cũ
-                    for _, choice in pairs(CHOICEHOLDER:GetChildren()) do
-                        if choice:IsA("Frame") then
-                            choice:Destroy()
+                local function closeDropdown()
+                    dropdown.state = false
+                    CHOICEHOLDER.Visible = false
+                    BLOCKINPUT.Visible = false
+                    Library:tween(ACTIVETEXT, { TextColor3 = Library.Colors.ElementInactive })
+                    Library:tween(ACTIVECHOICE, { BorderColor3 = Library.Colors.BorderColor })
+                end
+                
+                local rebuildChoices
+                
+                local function toggleChoice(name, currentList)
+                    if dropdown.multi then
+                        local isSelected = table.find(dropdown.selectedItems, name)
+                        if isSelected then
+                            for i, v in ipairs(dropdown.selectedItems) do
+                                if v == name then
+                                    table.remove(dropdown.selectedItems, i)
+                                    break
+                                end
+                            end
+                        else
+                            if #dropdown.selectedItems < dropdown.max then
+                                table.insert(dropdown.selectedItems, name)
+                            end
+                        end
+                    else
+                        dropdown.selectedItems = {name}
+                        closeDropdown()
+                    end
+                    rebuildChoices(currentList) -- Vẽ lại để cập nhật highlight
+                    updateActiveText()
+                    options.callback(dropdown.multi and dropdown.selectedItems or dropdown.selectedItems[1])
+                end
+
+                rebuildChoices = function(listToBuild)
+                    -- Dọn dẹp các lựa chọn cũ
+                    for _, v in ipairs(CHOICEHOLDER:GetChildren()) do
+                        if v:IsA("GuiObject") and v.Name ~= "UIListLayout" and v.Name ~= "UIPadding" then
+                            v:Destroy()
                         end
                     end
-                    
-                    -- Xóa bảng tham chiếu cũ
                     dropdown.choiceElements = {}
                     
-                    -- Tạo lại các lựa chọn mới
-                    for _, name in ipairs(options.list) do
-                        local CHOICE = Library:Create("Frame", { -- Giữ nguyên Frame để có frame đằng sau
-                            Size = UDim2.new(1,-2,0,15),
+                    -- Tạo lựa chọn mới
+                    for _, name in ipairs(listToBuild) do
+                        local CHOICE_BTN = Library:Create("TextButton", {
+                            Size = UDim2.new(1, -8, 0, 15),
                             Parent = CHOICEHOLDER,
                             BackgroundTransparency = 1,
-                            BorderSizePixel = 0,
-                            ZIndex = dropdownindex + 5,
+                            Text = "",
+                            ZIndex = dropdownindex + 8,
+                            AutoButtonColor = false,
                         })
+
+                        local isSelected = table.find(dropdown.selectedItems, name)
+
+                        local CHOICETEXT = Library:Create("TextLabel", {
+                            Size = UDim2.new(1, 0, 1, 0),
+                            Parent = CHOICE_BTN,
+                            BackgroundTransparency = 1,
+                            FontFace = Library.Font,
+                            Text = name,
+                            TextColor3 = isSelected and Library.Colors.Accent or Library.Colors.ElementInactive,
+                            TextSize = 8
+                        })
+
+                        dropdown.choiceElements[name] = CHOICE_BTN
+
+                        Library:connection(CHOICE_BTN.MouseEnter, function()
+                            Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
+                        end)
+                        Library:connection(CHOICE_BTN.MouseLeave, function()
+                             if not table.find(dropdown.selectedItems, name) then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                             end
+                        end)
+                        Library:connection(CHOICE_BTN.MouseButton1Click, function()
+                            toggleChoice(name, listToBuild)
+                        end)
+                    end
+                    
+                    CHOICEHOLDER.CanvasSize = UDim2.new(0,0,0,CHOICEHOLDER.UIListLayout.AbsoluteContentSize.Y + 6)
+                end
+
+                -- Xử lý click để mở/đóng dropdown
+                Library:connection(ACTIVECHOICE.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        dropdown.state = not dropdown.state
+                        if dropdown.state then
+                            Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive})
+                            Library:tween(ACTIVECHOICE, { BorderColor3 = Library.Colors.Accent })
+                            
+                            local list = (options.list.__isDynamicList and options.list:GetList()) or options.list
+                            rebuildChoices(list)
+                            
+                            local height = math.min(CHOICEHOLDER.CanvasSize.Y.Offset, 120)
+                            CHOICEHOLDER.Size = UDim2.new(1,0,0,height)
+                            CHOICEHOLDER.Visible = true
+                            BLOCKINPUT.Visible = true
+                        else
+                            closeDropdown()
+                        end
+                    end
+                end)
+                
+                Library:connection(BLOCKINPUT.MouseButton1Click, closeDropdown)
+
+                -- Tự động cập nhật nếu là danh sách động
+                if options.list and options.list.__isDynamicList then
+                    Library:connection(options.list.Updated, function(actionType, value, newList)
+                        -- Xóa các lựa chọn không còn tồn tại
+                        for i = #dropdown.selectedItems, 1, -1 do
+                            if not table.find(newList, dropdown.selectedItems[i]) then
+                                table.remove(dropdown.selectedItems, i)
+                            end
+                        end
+                        -- Cập nhật text hiển thị và callback
+                        updateActiveText()
+                        options.callback(dropdown.multi and dropdown.selectedItems or dropdown.selectedItems[1])
                         
-                        -- Thêm TextButton bên trong Frame để xử lý click
-                        local CLICKABLE = Library:Create("TextButton", {
-                            Size = UDim2.new(1,0,1,0),
-                            Parent = CHOICE,
+                        -- Nếu dropdown đang mở, hãy vẽ lại các lựa chọn
+                        if dropdown.state then
+                            rebuildChoices(newList)
+                            local height = math.min(CHOICEHOLDER.CanvasSize.Y.Offset, 120)
+                            CHOICEHOLDER.Size = UDim2.new(1,0,0,height)
+                        end
+                    end)
+                end
+                
+                -- Khởi tạo lần đầu
+                rebuildChoices(sourceList)
+                updateActiveText()
+                options.callback(dropdown.multi and dropdown.selectedItems or dropdown.selectedItems[1])
+
+                return dropdown
+            end
+            
+            --[[----------------------------------------------------------------------------------------------------------]]
+            --                                          LIST (ĐÃ NÂNG CẤP VỚI MULTI-SELECT)                                   --
+            --[[----------------------------------------------------------------------------------------------------------]]
+            function section:AddList(options)
+                options = Library:validate({
+                    name = "list",
+                    list = {},
+                    multi = false,
+                    max = 1,
+                    callback = function(active) end
+                }, options or {})
+            
+                local listComponent = {
+                    selectedItems = {},
+                    choiceElements = {}
+                }
+                
+                listComponent.max = options.multi and options.max or 1
+            
+                local LISTCONTAINER = Library:Create("Frame", {
+                    Parent = ELEMENTCONTAINER,
+                    Size = UDim2.new(1, 0, 0, 120),
+                    Name = options.name,
+                    BorderSizePixel = 1,
+                    BorderColor3 = Library.Colors.BorderColor,
+                    BackgroundTransparency = 0,
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
+                })
+            
+                Library:Create("UIGradient", {
+                    Parent = LISTCONTAINER,
+                    Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+                    },
+                    Rotation = 90,
+                })
+            
+                local CHOICEHOLDER = Library:Create("ScrollingFrame", {
+                    Parent = LISTCONTAINER,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    CanvasSize = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 1,
+                    ScrollBarThickness = 3,
+                    ScrollBarImageColor3 = Library.Colors.Accent
+                })
+            
+                Library:Create("UIListLayout", {
+                    Parent = CHOICEHOLDER,
+                    FillDirection = Enum.FillDirection.Vertical,
+                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+                    Padding = UDim.new(0, 4),
+                    SortOrder = Enum.SortOrder.LayoutOrder
+                })
+                 Library:Create("UIPadding", {
+                    Parent = CHOICEHOLDER,
+                    PaddingTop = UDim.new(0, 5),
+                    PaddingBottom = UDim.new(0, 5)
+                })
+
+                local rebuildChoices
+
+                local function toggleChoice(name)
+                    if options.multi then
+                        local isSelected = table.find(listComponent.selectedItems, name)
+                        if isSelected then
+                            for i, v in ipairs(listComponent.selectedItems) do
+                                if v == name then
+                                    table.remove(listComponent.selectedItems, i)
+                                    break
+                                end
+                            end
+                        else
+                            if #listComponent.selectedItems < listComponent.max then
+                                table.insert(listComponent.selectedItems, name)
+                            end
+                        end
+                    else
+                        listComponent.selectedItems = {name}
+                    end
+                    -- Cập nhật UI ngay lập tức
+                    local choiceUI = listComponent.choiceElements[name]
+                    if choiceUI then
+                        local textLabel = choiceUI.CHOICETEXT
+                        local isNowSelected = table.find(listComponent.selectedItems, name)
+                        Library:tween(textLabel, { TextColor3 = isNowSelected and Library.Colors.Accent or Library.Colors.ElementActive })
+                        -- Bỏ highlight các mục khác nếu là single-select
+                        if not options.multi then
+                           for itemName, itemUI in pairs(listComponent.choiceElements) do
+                               if itemName ~= name then
+                                    Library:tween(itemUI.CHOICETEXT, { TextColor3 = Library.Colors.ElementInactive })
+                               end
+                           end
+                        end
+                    end
+                    options.callback(options.multi and listComponent.selectedItems or listComponent.selectedItems[1])
+                end
+
+                rebuildChoices = function(listToBuild)
+                    -- Dọn dẹp
+                    for _, v in ipairs(CHOICEHOLDER:GetChildren()) do
+                        if v:IsA("GuiObject") and v.Name ~= "UIListLayout" and v.Name ~= "UIPadding" then
+                            v:Destroy()
+                        end
+                    end
+                    listComponent.choiceElements = {}
+                    
+                    -- Xây dựng lại
+                    for _, name in ipairs(listToBuild) do
+                        local CHOICE_BTN = Library:Create("TextButton", {
+                            Size = UDim2.new(1, -10, 0, 18),
+                            Parent = CHOICEHOLDER,
                             BackgroundTransparency = 1,
                             Text = "",
-                            ZIndex = dropdownindex + 6,
-                            AutoButtonColor = false
+                            ZIndex = 100,
+                            AutoButtonColor = false,
                         })
-                        
+            
                         local CHOICETEXT = Library:Create("TextLabel", {
-                            Size = UDim2.new(1,0,1,0),
-                            Parent = CHOICE,
+                            Size = UDim2.new(1, 0, 1, 0),
+                            Parent = CHOICE_BTN,
                             BackgroundTransparency = 1,
                             FontFace = Library.Font,
                             Text = name,
                             TextColor3 = Library.Colors.ElementInactive,
-                            TextSize = 8,
-                            ZIndex = dropdownindex + 5,
+                            TextSize = 9,
                         })
                         
-                        local CHOICEBAR = Library:Create("Frame", {
-                            Parent = CHOICE,
-                            Size = UDim2.new(0,0,0,1),
-                            AnchorPoint = Vector2.new(0.5, 0.5),
-                            Position = UDim2.new(0.5, 0, 0.5, 5),
-                            BackgroundTransparency = 0.5,
-                            BackgroundColor3 = Library.Colors.Accent,
-                            ZIndex = dropdownindex + 5,
-                        })
+                        -- Lưu lại tham chiếu
+                        listComponent.choiceElements[name] = { BUTTON = CHOICE_BTN, CHOICETEXT = CHOICETEXT }
                         
-                        -- Lưu trữ tham chiếu đến các phần tử của lựa chọn
-                        dropdown.choiceElements[name] = {
-                            text = CHOICETEXT,
-                            bar = CHOICEBAR
-                        }
-                        
-                        -- Highlight lựa chọn hiện tại
-                        local isInitiallySelected = false
-                        for _, selected in ipairs(dropdown.selectedItems) do
-                            if selected == name then
-                                isInitiallySelected = true
-                                break
-                            end
-                        end
-                        
-                        if isInitiallySelected then
+                        -- Cập nhật trạng thái ban đầu
+                         if table.find(listComponent.selectedItems, name) then
                             CHOICETEXT.TextColor3 = Library.Colors.Accent
-                            CHOICEBAR.BackgroundTransparency = 0.5
-                            CHOICEBAR.Size = UDim2.new(0,25,0,1)
-                        end
+                         end
+
+                        Library:connection(CHOICE_BTN.MouseEnter, function()
+                            if not table.find(listComponent.selectedItems, name) then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
+                            end
+                        end)
                         
-                        -- Xử lý lý click
-                        CLICKABLE.MouseButton1Click:Connect(function()
+                        Library:connection(CHOICE_BTN.MouseLeave, function()
+                             if not table.find(listComponent.selectedItems, name) then
+                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
+                             end
+                        end)
+
+                        Library:connection(CHOICE_BTN.MouseButton1Click, function()
                             toggleChoice(name)
                         end)
-                        
-                        -- Xử lý hover
-                        CLICKABLE.MouseEnter:Connect(function()
-                            local isCurrentlySelected = false
-                            for _, selected in ipairs(dropdown.selectedItems) do
-                                if selected == name then
-                                    isCurrentlySelected = true
-                                    break
-                                end
-                            end
-                            
-                            if not isCurrentlySelected then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementActive})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,25,0,1)})
-                            end
-                        end)
-                        
-                        CLICKABLE.MouseLeave:Connect(function()
-                            local isCurrentlySelected = false
-                            for _, selected in ipairs(dropdown.selectedItems) do
-                                if selected == name then
-                                    isCurrentlySelected = true
-                                    break
-                                end
-                            end
-                            
-                            if not isCurrentlySelected then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1,1)})
-                            end
-                        end)
-                    end)
-                end
-                
-                -- Thiết lập cập nhật tự động nếu list là một hàm
-                if listFunction then
-                    local lastUpdateTime = 0
-                    local updateConnection = Library:connection(_runservice.Heartbeat, function()
-                        local currentTime = tick()
-                        if currentTime - lastUpdateTime >= options.updateRate then
-                            lastUpdateTime = currentTime
-                            
-                            local newList = listFunction()
-                            -- So sánh danh sách cũ và mới (dùng cách đơn giản là chuyển thành string)
-                            local currentListString = table.concat(options.list, "|")
-                            local newListString = table.concat(newList, "|")
-                            
-                            if currentListString ~= newListString then
-                                options.list = newList
-                                
-                                -- Xóa các lựa chọn không còn tồn tại trong danh sách mới
-                                local newSelectedItems = {}
-                                for _, selectedItem in ipairs(dropdown.selectedItems) do
-                                    for _, newItem in ipairs(newList) do
-                                        if selectedItem == newItem then
-                                            table.insert(newSelectedItems, selectedItem)
-                                            break
-                                        end
-                                    end
-                                end
-                                
-                                dropdown.selectedItems = newSelectedItems
-                                
-                                -- Cập nhật hiển thị
-                                ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected")
-                                
-                                -- Tạo lại các lựa chọn
-                                rebuildChoices()
-                                
-                                -- Gọi callback với danh sách các lựa chọn đã được cập nhật
-                                options.callback(dropdown.selectedItems)
-                            end
-                        end
-                    end)
-                end
-                
-                -- Xử lý click vào dropdown chính
-                Library:connection(ACTIVECHOICE.InputBegan, function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        dropdown.state = not dropdown.state
-                        
-                        if dropdown.state then
-                            -- Mở dropdown
-                            Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementActive})
-                            
-                            -- Tính toán kích thước
-                            local height = 0
-                            for _, choice in ipairs(CHOICEHOLDER:GetChildren()) do
-                                if choice:IsA("Frame") then
-                                    height = height + 15
-                                end
-                            end
-                            
-                            local endsize = math.min(height, 150)
-                            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,1,endsize - 13)})
-                            Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1,0,endsize - 2)})
-                            CHOICEHOLDER.Visible = true
-                            BLOCKINPUT.Visible = true
-                        else
-                            -- Đóng dropdown
-                            Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                            Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
-                            Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0,0)})
-                            CHOICEHOLDER.Visible = false
-                            BLOCKINPUT.Visible = false
-                        end
                     end
-                end)
-                
-                -- Xử lý click vào nút chặn
-                BLOCKINPUT.MouseButton1Click:Connect(function()
-                    dropdown.state = false
-                    Library:tween(ACTIVETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                    Library:tween(ACTIVECHOICE, {Size = UDim2.new(1,0,0,15)})
-                    Library:tween(CHOICEHOLDER, {Size = UDim2.new(1,-1, 0,0,0)})
-                    CHOICEHOLDER.Visible = false
-                    BLOCKINPUT.Visible = false
-                end)
-                
-                -- Thêm phương thức Set để cập nhật giá trị từ bên ngoài
-                function dropdown:Set(value)
-                    if dropdown.multi then
-                        -- Xử lý multi-select
-                        if type(value) == "table") then
-                            -- Xóa tất cả các lựa chọn hiện tại
-                            dropdown.selectedItems = {}
-                            
-                            -- Thêm các lựa chọn mới (kiểm tra giới hạn max)
-                            for _, v in ipairs(value) do
-                                if #dropdown.selectedItems < dropdown.max then
-                                    -- Kiểm tra xem giá trị có trong danh sách không
-                                    for _, item in ipairs(options.list) do
-                                        if item == v then
-                                            table.insert(dropdown.selectedItems, v)
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            -- Cập nhật hiển thị
-                            ACTIVETEXT.Text = #dropdown.selectedItems > 0 and table.concat(dropdown.selectedItems, ", ") or "None selected")
-                            
-                            -- Cập nhật giao diện cho các lựa chọn
-                            for choiceName, elements in pairs(dropdown.choiceElements) do
-                                local isCurrentlySelected = false
-                                for _, selected in ipairs(dropdown.selectedItems) do
-                                    if selected == choiceName then
-                                        isCurrentlySelected = true
-                                        break
-                                    end
-                                end
-                                
-                                if isCurrentlySelected then
-                                    Library:tween(elements.text, {TextColor3 = Library.Colors.Accent})
-                                    Library:tween(elements.bar, {Size = UDim2.new(0,25,0,1), BackgroundTransparency = 0.5})
-                                else
-                                    Library:tween(elements.text, {TextColor3 = Library.Colors.ElementInactive})
-                                    Library:tween(elements.bar, {Size = UDim2.new(0,0,0,1), BackgroundTransparency = 0.5})
-                                end
-                            end
-                            
-                            -- Gọi callback với danh sách các lựa chọn
-                            options.callback(dropdown.selectedItems)
-                        end
-                    else
-                        -- Xử lý single-select
-                        if type(value) == "string" then
-                            -- Kiểm tra xem giá trị có trong danh sách không
-                            for _, item in ipairs(options.list) do
-                                if item == value then
-                                    dropdown.selectedItems = {value}
-                                    ACTIVETEXT.Text = value
-                                    
-                                    -- Cập nhật giao diện cho các lựa chọn
-                                    for choiceName, elements in pairs(dropdown.choiceElements) do
-                                        if choiceName == value then
-                                            Library:tween(elements.text, {TextColor3 = Library.Colors.Accent})
-                                            Library:tween(elements.bar, {Size = UDim2.new(0,25,0,1), BackgroundTransparency = 0.5})
-                                        else
-                                            Library:tween(elements.text, {TextColor3 = Library.Colors.ElementInactive})
-                                            Library:tween(elements.bar, {Size = UDim2.new(0,0,0,1), BackgroundTransparency = 0.5})
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
+                    
+                    -- Cập nhật CanvasSize
+                    task.wait() -- Đợi UIListLayout tính toán xong
+                    CHOICEHOLDER.CanvasSize = UDim2.new(0,0,0,CHOICEHOLDER.UIListLayout.AbsoluteContentSize.Y + 10)
                 end
                 
-                -- Thêm phương thức Get để lấy giá trị hiện tại
-                function dropdown:Get()
-                    if dropdown.multi then
-                        return dropdown.selectedItems
-                    else
-                        return dropdown.selectedItems[1] or ""
-                    end
+                -- Kết nối với danh sách động nếu có
+                if options.list and options.list.__isDynamicList then
+                     Library:connection(options.list.Updated, function(actionType, value, newList)
+                         -- Lọc ra những mục đã chọn nhưng không còn trong danh sách mới
+                         for i = #listComponent.selectedItems, 1, -1 do
+                            if not table.find(newList, listComponent.selectedItems[i]) then
+                                table.remove(listComponent.selectedItems, i)
+                            end
+                         end
+                         
+                         rebuildChoices(newList)
+                         
+                         -- Gọi lại callback với danh sách đã được lọc
+                         options.callback(options.multi and listComponent.selectedItems or listComponent.selectedItems[1])
+                     end)
                 end
-                
-                -- Gọi callback với giá trị mặc định
-                if dropdown.multi then
-                    options.callback(dropdown.selectedItems)
-                else
-                    options.callback(dropdown.selectedItems[1] or "")
-                end
-                
-                return dropdown
-            end
+
+                -- Chạy lần đầu
+                local sourceList = (options.list.__isDynamicList and options.list:GetList()) or options.list
+                rebuildChoices(sourceList)
+                options.callback(options.multi and listComponent.selectedItems or listComponent.selectedItems[1])
             
-            -- List element (Tương tự động cập nhật)
-            function section:AddList(options)
-                options = Library:validate({
-                    default = 1,
-                    list = {"example 1", "example 2", "example 3", "example 4", "example 5", "example 6", "example 7", "example 8", "example 9", "example 10"},
-                    callback = function(active) end,
-                    updateRate = 1 -- Tần suất cập nhật tự động (giây)
-                }, options or {})
-                
-                options.default = options.default or 1
-                
-                -- Kiểm tra xem list có phải là một hàm không (để tự động cập nhật)
-                local listFunction = nil
-                if type(options.list) == "function" then
-                    listFunction = options.list
-                    options.list = listFunction() -- Lấy giá trị ban đầu
-                end
-                
-                local List = {
-                    CurrentChoice = nil,
-                    choiceElements = {} -- Lưu trữ tham chiếu đến các phần tử lựa chọn
-                    updateRate = options.updateRate or 1,
-                    lastUpdateTime = 0,
-                    updateConnection = nil
-                end
-                
-                local LISTCONTAINER = Library:Create("Frame", {
-                    Parent = ELEMENTCONTAINER,
-                    Size = UDim2.new(1, 0, 0, 100),
-                    Name = options.name,
-                    BorderSizePixel = 1,
-                    BorderColor3 = Color3.fromRGB(255,255,255),
-                    BackgroundTransparency = 0,
-                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
-                })
-                
-                Library:Create("UIGradient", {
-                    Parent = LISTCONTAINER,
-                    Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-                    }),
-                    Rotation = 90,
-                })
-                
-                local CHOICEHOLDER = Library:Create("ScrollingFrame", {
-                    Parent = LISTCONTAINER,
-                    Size = UDim2.new(1,0,1,0),
-                    CanvasSize = UDim2.new(0,0,10,0),
-                    BackgroundTransparency = 1,
-                    ScrollBarThickness = 0,
-                })
-                
-                Library:Create("UIListLayout", {
-                    Parent = CHOICEHOLDER,
-                    FillDirection = Enum.FillDirection.Vertical,
-                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                    VerticalAlignment = Enum.VerticalAlignment.Top,
-                    Padding = UDim.new(0, 4),
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Name = "ListLayout"
-                })
-                
-                local TRANSPARENCYEFFECT = Library:Create("Frame",{
-                    Parent = LISTCONTAINER,
-                    Size = UDim2.new(1,0,1,0),
-                    BackgroundColor3 = Color3.fromRGB(0,0,0,0),
-                    BorderSizePixel = 0,
-                    ZIndex = 2,
-                })
-                
-                Library:Create("UIGradient", {
-                    Parent = TRANSPARENCYEFFECT,
-                    Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 1),
-                        NumberSequenceKeypoint.new(0.8, 0.6),
-                        NumberSequenceKeypoint.new(1, 0),
-                        NumberSequenceKeypoint.new(1, 0),
-                    }),
-                    Rotation = 90
-                })
-                
-                -- Hàm để tạo lại các lựa chọn
-                local function rebuildChoices()
-                    -- Xóa tất cả các lựa chọn cũ
-                    for _, choice in pairs(CHOICEHOLDER:GetChildren()) do
-                        if choice:IsA("Frame") then
-                            choice:Destroy()
-                        end
-                    end
-                    
-                    -- Xóa bảng tham chiếu cũ
-                    List.choiceElements = {}
-                    
-                    -- Tạo lại các lựa chọn mới
-                    for _, name in ipairs(options.list) do
-                        local CHOICE = Library:Create("Frame", {
-                            Size = UDim2.new(1,-2,0,15),
-                            Parent = CHOICEHOLDER,
-                            BackgroundTransparency = 1,
-                            BorderSizePixel = 0,
-                            ZIndex = 100,
-                        })
-            
-                            -- Thêm TextButton bên trong Frame để xử lý click
-                            local CLICKABLE = Library:Create("TextButton", {
-                                Size = UDim2.new(1,0,1,0),
-                                Parent = CHOICE,
-                                BackgroundTransparency = 1,
-                                Text = "",
-                                ZIndex = dropdownindex + 6,
-                                AutoButtonColor = false
-                            })
-                            
-                            local CHOICETEXT = Library:Create("TextLabel", {
-                                Size = UDim2.new(1,0,1,0),
-                                Parent = CHOICE,
-                                BackgroundTransparency = 1,
-                                FontFace = Library.Font,
-                                Text = name,
-                                TextColor3 = Library.Colors.ElementInactive,
-                                TextSize = 8,
-                                ZIndex = dropdownindex + 5,
-                            })
-                            
-                            local CHOICEBAR = Library:Create("Frame", {
-                                Parent = CHOICE,
-                                Size = UDim2.new(0,0,0,1),
-                                AnchorPoint = Vector2.new(0.5, 0.5),
-                                Position = UDim2.new(0.5, 0, 0.5, 5),
-                                BackgroundTransparency = 0.5,
-                                BackgroundColor3 = Library.Colors.Accent,
-                                ZIndex = dropdownindex + 5,
-                            })
-                            
-                            -- Lưu trữ tham chiếu đến các phần tử của lựa chọn
-                            List.choiceElements[name] = {
-                                text = CHOICETEXT,
-                                bar = CHOICEBAR
-                            }
-                            
-                            -- Highlight lựa chọn hiện tại
-                            if List.CurrentChoice == name then 
-                                CHOICETEXT.TextColor3 = Library.Colors.Accent
-                                CHOICEBAR.BackgroundTransparency = 0.5
-                                CHOICEBAR.Size = UDim2.new(0,35,0,1)
-                            end
-                        end
-                        
-                        -- Choice functionality
-                        local choice = {
-                            Name = name,
-                            Hover = false,
-                            Active = false,
-                        }
-                        
-                        Library:connection(CHOICE.MouseEnter, function()
-                            if List.CurrentChoice ~= choice.Name then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1)})
-                            end
-                            choice.Hover = true
-                        end
-                        
-                        Library:connection(CHOICE.MouseLeave, function()
-                            if List.CurrentChoice ~= choice.Name then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.ElementInactive})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,0,0,1,1)})
-                            end
-                            choice.Hover = false
-                        end
-                    end)
-                    
-                    Library:connection(_uis.InputBegan, function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            if choice.Hover then
-                                Library:tween(CHOICETEXT, {TextColor3 = Library.Colors.Accent})
-                                Library:tween(CHOICEBAR, {Size = UDim2.new(0,35,0,1))
-                                List.CurrentChoice = choice.Name
-                                options.callback(choice.Name)
-                            end
-                        end
-                    end)
-                end
-                
-                -- Tạo các lựa chọn ban đầu
-                for _,v in ipairs(options.list) do
-                    List:AddChoice(v)
-                end
-                
-                -- Tạo các lựa chọn ban đầu
-                rebuildChoices()
-                
-                return List
+                return listComponent
             end
             
             return section
@@ -2874,7 +2755,7 @@ ab.AddWindow = function (options)
         Library:connection(_runservice.RenderStepped, function() 
             CURSOR.Position = UDim2.new(0, mouse.X -6, 0, mouse.Y - 2) 
         end)
-    end)
+    end
     
     -- Window dragging functionality
     do
@@ -2910,10 +2791,8 @@ ab.AddWindow = function (options)
     
         Library:connection(_uis.InputEnded, function(input)
             if input == dragInput and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                if input == dragInput then
-                    dragging = false
-                    dragInput = nil
-                end
+                dragging = false
+                dragInput = nil
             end
         end)
     end
