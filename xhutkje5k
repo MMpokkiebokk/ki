@@ -26,6 +26,10 @@ local Library = {
     Instances = {},
     Connections = {},
     Font = nil,
+    -- Thêm hệ thống cập nhật tự động
+    DynamicElements = {},
+    UpdateInterval = 0.5, -- Kiểm tra cập nhật mỗi 0.5 giây
+    LastUpdateTime = 0,
 }
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
@@ -114,6 +118,34 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
+
+-- Hàm so sánh hai bảng để kiểm tra thay đổi
+local function areTablesEqual(t1, t2)
+    if #t1 ~= #t2 then return false end
+    local sorted1 = table.clone(t1)
+    local sorted2 = table.clone(t2)
+    table.sort(sorted1)
+    table.sort(sorted2)
+    for i = 1, #sorted1 do
+        if sorted1[i] ~= sorted2[i] then
+            return false
+        end
+    end
+    return true
+end
+
+-- Vòng lặp cập nhật tự động
+Library:connection(_runservice.Heartbeat, function(currentTime)
+    if currentTime - Library.LastUpdateTime >= Library.UpdateInterval then
+        Library.LastUpdateTime = currentTime
+        for _, element in ipairs(Library.DynamicElements) do
+            if element and element.Refresh then
+                element:Refresh()
+            end
+        end
+    end
+end)
+
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
@@ -2208,6 +2240,13 @@ ab.AddWindow = function (options)
                 
                 dropdownindex = dropdownindex - 1
                 
+                -- Xử lý list động
+                local listGetter = nil
+                if type(options.list) == "function" then
+                    listGetter = options.list
+                    options.list = listGetter() -- Lấy giá trị ban đầu
+                end
+                
                 -- Xử lý default value
                 local defaultValue = options.list[1] -- Mặc định là phần tử đầu tiên
                 if options.default then
@@ -2231,7 +2270,8 @@ ab.AddWindow = function (options)
                     state = false,
                     multi = options.multi,
                     currentSelection = defaultValue,
-                    choices = {} -- Lưu trữ các lựa chọn để có thể cập nhật
+                    choices = {}, -- Lưu trữ các lựa chọn để có thể cập nhật
+                    listGetter = listGetter -- Lưu hàm lấy list
                 }
                 
                 local DROPDOWNCONTAINER = Library:Create("Frame", {
@@ -2458,7 +2498,8 @@ ab.AddWindow = function (options)
                             Frame = CHOICE,
                             Text = CHOICETEXT,
                             Bar = CHOICEBAR,
-                            Clickable = CLICKABLE
+                            Clickable = CLICKABLE,
+                            Name = name
                         }
                         
                         -- Highlight lựa chọn hiện tại
@@ -2515,28 +2556,68 @@ ab.AddWindow = function (options)
                 -- Thêm các lựa chọn ban đầu
                 addChoices()
                 
-                -- Hàm để cập nhật danh sách lựa chọn
+                -- Hàm để cập nhật danh sách lựa chọn (cho cả động và tĩnh)
                 function dropdown:UpdateList(newList)
-                    options.list = newList
-                    addChoices()
-                    
-                    -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
-                    if dropdown.multi then
-                        local validSelections = {}
-                        for _, selection in ipairs(dropdown.active) do
-                            if table.find(options.list, selection) then
-                                table.insert(validSelections, selection)
+                    if listGetter then
+                        -- Nếu là list động, chỉ cần gọi Refresh
+                        self:Refresh()
+                    else
+                        -- Nếu là list tĩnh, cập nhật thủ công
+                        options.list = newList or {}
+                        addChoices()
+                        
+                        -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
+                        if dropdown.multi then
+                            local validSelections = {}
+                            for _, selection in ipairs(dropdown.active) do
+                                if table.find(options.list, selection) then
+                                    table.insert(validSelections, selection)
+                                end
+                            end
+                            dropdown.active = validSelections
+                        else
+                            if not table.find(options.list, dropdown.currentSelection) then
+                                dropdown.currentSelection = options.list[1] or ""
+                                dropdown.active = dropdown.currentSelection
                             end
                         end
-                        dropdown.active = validSelections
-                    else
-                        if not table.find(options.list, dropdown.currentSelection) then
-                            dropdown.currentSelection = options.list[1] or ""
-                            dropdown.active = dropdown.currentSelection
-                        end
+                        
+                        updateDisplay()
                     end
+                end
+
+                -- Hàm làm mới cho list động
+                function dropdown:Refresh()
+                    if not self.listGetter then return end
                     
-                    updateDisplay()
+                    local newList = self.listGetter()
+                    if not areTablesEqual(options.list, newList) then
+                        options.list = newList
+                        addChoices()
+                        
+                        -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
+                        if dropdown.multi then
+                            local validSelections = {}
+                            for _, selection in ipairs(dropdown.active) do
+                                if table.find(options.list, selection) then
+                                    table.insert(validSelections, selection)
+                                end
+                            end
+                            dropdown.active = validSelections
+                        else
+                            if not table.find(options.list, dropdown.currentSelection) then
+                                dropdown.currentSelection = options.list[1] or ""
+                                dropdown.active = dropdown.currentSelection
+                            end
+                        end
+                        
+                        updateDisplay()
+                    end
+                end
+                
+                -- Đăng ký vào hệ thống cập nhật tự động nếu là list động
+                if listGetter then
+                    table.insert(Library.DynamicElements, dropdown)
                 end
                 
                 -- Xử lý click vào dropdown chính
@@ -2604,12 +2685,20 @@ ab.AddWindow = function (options)
                 
                 options.default = options.default or 1
                 
+                -- Xử lý list động
+                local listGetter = nil
+                if type(options.list) == "function" then
+                    listGetter = options.list
+                    options.list = listGetter() -- Lấy giá trị ban đầu
+                end
+                
                 local List = {
                     CurrentChoice = nil,
                     SelectedChoices = options.multi and {} or nil,
                     multi = options.multi,
                     max = options.max,
-                    choices = {} -- Lưu trữ các lựa chọn để có thể cập nhật
+                    choices = {}, -- Lưu trữ các lựa chọn để có thể cập nhật
+                    listGetter = listGetter -- Lưu hàm lấy list
                 }
                 
                 local LISTCONTAINER = Library:Create("Frame", {
@@ -2768,7 +2857,8 @@ ab.AddWindow = function (options)
                         List.choices[name] = {
                             Frame = CHOICE,
                             Text = CHOICETEXT,
-                            Bar = CHOICEBAR
+                            Bar = CHOICEBAR,
+                            Name = name
                         }
                         
                         -- Highlight lựa chọn hiện tại
@@ -2842,32 +2932,76 @@ ab.AddWindow = function (options)
                 -- Thêm các lựa chọn ban đầu
                 addChoices()
                 
-                -- Hàm để cập nhật danh sách lựa chọn
+                -- Hàm để cập nhật danh sách lựa chọn (cho cả động và tĩnh)
                 function List:UpdateList(newList)
-                    options.list = newList
-                    addChoices()
-                    
-                    -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
-                    if List.multi then
-                        local validSelections = {}
-                        for _, selection in ipairs(List.SelectedChoices) do
-                            if table.find(options.list, selection) then
-                                table.insert(validSelections, selection)
+                    if self.listGetter then
+                        -- Nếu là list động, chỉ cần gọi Refresh
+                        self:Refresh()
+                    else
+                        -- Nếu là list tĩnh, cập nhật thủ công
+                        options.list = newList or {}
+                        addChoices()
+                        
+                        -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
+                        if List.multi then
+                            local validSelections = {}
+                            for _, selection in ipairs(List.SelectedChoices) do
+                                if table.find(options.list, selection) then
+                                    table.insert(validSelections, selection)
+                                end
+                            end
+                            List.SelectedChoices = validSelections
+                        else
+                            if not table.find(options.list, List.CurrentChoice) then
+                                List.CurrentChoice = options.list[1] or ""
                             end
                         end
-                        List.SelectedChoices = validSelections
-                    else
-                        if not table.find(options.list, List.CurrentChoice) then
-                            List.CurrentChoice = options.list[1] or ""
+                        
+                        -- Gọi callback với giá trị cập nhật
+                        if List.multi then
+                            options.callback(List.SelectedChoices)
+                        else
+                            options.callback(List.CurrentChoice)
                         end
                     end
+                end
+
+                -- Hàm làm mới cho list động
+                function List:Refresh()
+                    if not self.listGetter then return end
                     
-                    -- Gọi callback với giá trị cập nhật
-                    if List.multi then
-                        options.callback(List.SelectedChoices)
-                    else
-                        options.callback(List.CurrentChoice)
+                    local newList = self.listGetter()
+                    if not areTablesEqual(options.list, newList) then
+                        options.list = newList
+                        addChoices()
+                        
+                        -- Đảm bảo các lựa chọn hiện tại vẫn còn trong danh sách mới
+                        if List.multi then
+                            local validSelections = {}
+                            for _, selection in ipairs(List.SelectedChoices) do
+                                if table.find(options.list, selection) then
+                                    table.insert(validSelections, selection)
+                                end
+                            end
+                            List.SelectedChoices = validSelections
+                        else
+                            if not table.find(options.list, List.CurrentChoice) then
+                                List.CurrentChoice = options.list[1] or ""
+                            end
+                        end
+                        
+                        -- Gọi callback với giá trị cập nhật
+                        if List.multi then
+                            options.callback(List.SelectedChoices)
+                        else
+                            options.callback(List.CurrentChoice)
+                        end
                     end
+                end
+
+                -- Đăng ký vào hệ thống cập nhật tự động nếu là list động
+                if listGetter then
+                    table.insert(Library.DynamicElements, List)
                 end
                 
                 -- Add default choices
