@@ -128,8 +128,7 @@ function lerp(startValue, endValue, duration, callback)
         task.wait()
     end
 end
-
--- Hàm cập nhật tự động cho các danh sách động - Sử dụng Heartbeat
+-- Hàm cập nhật tự động cho các danh sách động - Sử dụng Heartbeat với kiểm tra thay đổi
 function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
     updateInterval = updateInterval or 1 -- Mặc định cập nhật mỗi giây
     
@@ -140,6 +139,7 @@ function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
     end
     
     local lastUpdate = 0
+    local lastData = {} -- Lưu trữ dữ liệu lần cập nhật trước đó
     
     -- Tạo kết nối Heartbeat mới
     Library.HeartbeatConnections[listId] = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
@@ -147,9 +147,13 @@ function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
         if lastUpdate >= updateInterval then
             local success, result = pcall(updateFunction)
             if success and result then
-                -- Cập nhật danh sách nếu có kết quả
-                if Library.DynamicLists[listId] then
-                    Library.DynamicLists[listId].UpdateList(result)
+                -- Chỉ cập nhật nếu dữ liệu thực sự thay đổi
+                if not Library.CompareTables(result, lastData) then
+                    lastData = table.clone(result)
+                    -- Cập nhật danh sách nếu có kết quả
+                    if Library.DynamicLists[listId] then
+                        Library.DynamicLists[listId].UpdateList(result)
+                    end
                 end
             end
             lastUpdate = 0
@@ -161,6 +165,21 @@ function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
         UpdateList = nil, -- Sẽ được gán sau
         LastUpdate = tick()
     }
+end
+
+-- Hàm so sánh hai bảng để kiểm tra thay đổi
+function Library.CompareTables(table1, table2)
+    if #table1 ~= #table2 then
+        return false
+    end
+    
+    for i, v in ipairs(table1) do
+        if table2[i] ~= v then
+            return false
+        end
+    end
+    
+    return true
 end
 
 -- Hàm để gán hàm cập nhật cho danh sách
@@ -3038,33 +3057,103 @@ ab.AddWindow = function (options)
                             end
                             
                             -- SỬA LỖI: Hàm để cập nhật danh sách lựa chọn
-                            function List:UpdateList(newList)
-                                if newList then
-                                    options.list = newList
-                                end
-                                
-                                -- Xóa danh sách cũ
-                                List:ClearChoices()
-                                
-                                -- Đợi một frame để đảm bảo GUI đã xử lý việc xóa
-                                task.wait()
-                                
-                                -- Thêm các lựa chọn mới
-                                for _, name in ipairs(options.list) do
-                                    List:AddChoice(name)
-                                end
-            
-                                -- CanvasSize sẽ tự động cập nhật nhờ AutomaticCanvasSize = Y
-                                -- Nhưng chúng ta có thể cập nhật thủ công nếu cần
-                                local layout = CHOICEHOLDER:FindFirstChildOfClass("UIListLayout")
-                                if layout then
-                                    local padding = CHOICEHOLDER:FindFirstChildOfClass("UIPadding")
-                                    local topPadding = padding and padding.PaddingTop.Offset or 0
-                                    local bottomPadding = padding and padding.PaddingBottom.Offset or 0
-                                    
-                                    CHOICEHOLDER.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding)
+                                           -- SỬA LỖI: Hàm để cập nhật danh sách lựa chọn - Giữ vị trí cuộn
+                function List:UpdateList(newList)
+                    if newList then
+                        options.list = newList
+                    end
+                    
+                    -- Lưu lại vị trí cuộn hiện tại
+                    local currentScrollPosition = CHOICEHOLDER.CanvasPosition.Y
+                    
+                    -- Lưu lại các lựa chọn đã chọn
+                    local selectedItems = {}
+                    if options.multi then
+                        selectedItems = table.clone(List.CurrentChoice)
+                    else
+                        selectedItems = {List.CurrentChoice}
+                    end
+                    
+                    -- Tạo một bản đồ của các mục hiện tại để so sánh
+                    local currentItems = {}
+                    for _, choice in ipairs(List.choices) do
+                        currentItems[choice.Name] = choice
+                    end
+                    
+                    -- Xóa các mục không còn trong danh sách mới
+                    for itemName, choice in pairs(currentItems) do
+                        if not table.find(options.list, itemName) then
+                            choice.Frame:Destroy()
+                            -- Xóa khỏi bảng choices
+                            for i, c in ipairs(List.choices) do
+                                if c.Name == itemName then
+                                    table.remove(List.choices, i)
+                                    break
                                 end
                             end
+                        end
+                    end
+                    
+                    -- Thêm các mục mới
+                    for _, name in ipairs(options.list) do
+                        if not currentItems[name] then
+                            List:AddChoice(name)
+                        end
+                    end
+                    
+                    -- Cập nhật lại các lựa chọn đã chọn
+                    if options.multi then
+                        List.CurrentChoice = selectedItems
+                    else
+                        if #selectedItems > 0 and table.find(options.list, selectedItems[1]) then
+                            List.CurrentChoice = selectedItems[1]
+                        else
+                            List.CurrentChoice = options.list[1] or ""
+                        end
+                    end
+                    
+                    -- Cập nhật giao diện cho các lựa chọn đã chọn
+                    for _, choice in ipairs(List.choices) do
+                        if options.multi then
+                            if table.find(List.CurrentChoice, choice.Name) then
+                                choice.Text.TextColor3 = Library.Colors.Accent
+                                choice.Bar.BackgroundTransparency = 0.5
+                                choice.Bar.Size = UDim2.new(0,35,0,1)
+                            else
+                                choice.Text.TextColor3 = Library.Colors.ElementInactive
+                                choice.Bar.BackgroundTransparency = 0.5
+                                choice.Bar.Size = UDim2.new(0,0,0,1)
+                            end
+                        else
+                            if List.CurrentChoice == choice.Name then
+                                choice.Text.TextColor3 = Library.Colors.Accent
+                                choice.Bar.BackgroundTransparency = 0.5
+                                choice.Bar.Size = UDim2.new(0,35,0,1)
+                            else
+                                choice.Text.TextColor3 = Library.Colors.ElementInactive
+                                choice.Bar.BackgroundTransparency = 0.5
+                                choice.Bar.Size = UDim2.new(0,0,0,1)
+                            end
+                        end
+                    end
+                    
+                    -- Cập nhật CanvasSize
+                    local layout = CHOICEHOLDER:FindFirstChildOfClass("UIListLayout")
+                    if layout then
+                        local padding = CHOICEHOLDER:FindFirstChildOfClass("UIPadding")
+                        local topPadding = padding and padding.PaddingTop.Offset or 0
+                        local bottomPadding = padding and padding.PaddingBottom.Offset or 0
+                        
+                        CHOICEHOLDER.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + topPadding + bottomPadding)
+                    end
+                    
+                    -- Khôi phục vị trí cuộn (nếu có thể)
+                    -- Chỉ khôi phục nếu vị trí cũ không vượt quá giới hạn mới
+                    local maxScrollPosition = math.max(0, CHOICEHOLDER.CanvasSize.Y.Offset - CHOICEHOLDER.AbsoluteSize.Y)
+                    if currentScrollPosition <= maxScrollPosition then
+                        CHOICEHOLDER.CanvasPosition = UDim2.new(0, 0, 0, currentScrollPosition)
+                    end
+                end
                             
                             -- Thêm các lựa chọn mặc định
                             for _,v in pairs(options.list) do
