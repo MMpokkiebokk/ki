@@ -1,4 +1,4 @@
-game = cloneref(game)
+game = cloneref and cloneref(game) or game
 local Workspace = game:GetService("Workspace") 
 local function gs(service) return game:GetService(service) end
 local _tweenservice, _runservice, _coregui, _uis, _http = gs("TweenService"), gs("RunService"), gs("CoreGui"), gs("UserInputService"), gs("HttpService")
@@ -26,14 +26,37 @@ local Library = {
     Instances = {},
     Connections = {},
     Font = nil,
-    DynamicLists = {}, -- Lưu trữ các danh sách cần cập nhật tự động
-    HeartbeatConnections = {}, -- Lưu trữ các kết nối Heartbeat
+    DynamicLists = {},
+    HeartbeatConnections = {},
 }
+
+-- Hàm sao chép bảng an toàn thay cho table.clone
+function Library:CloneTable(original)
+    local copy = {}
+    for key, value in pairs(original) do
+        if type(value) == "table" then
+            copy[key] = Library:CloneTable(value)
+        else
+            copy[key] = value
+        end
+    end
+    return copy
+end
 
 -- Font registration function
 function Library:Register_Font(Name, Weight, Style, Asset)
-    if not isfile(Asset.Id) then writefile(Asset.Id, Asset.Font) end
-    if isfile(Name .. ".font") then delfile(Name .. ".font") end
+    -- Kiểm tra xem các hàm file có tồn tại không
+    if not writefile or not isfile or not getcustomasset then
+        warn("File operations not available. Using default font.")
+        return Font.new("rbxasset://fonts/families/SourceSansPro.json")
+    end
+    
+    if not isfile(Asset.Id) then 
+        pcall(function() writefile(Asset.Id, Asset.Font) end)
+    end
+    if isfile(Name .. ".font") then 
+        pcall(function() delfile(Name .. ".font") end)
+    end
     local Data = {
         name = Name,
         faces = {
@@ -45,26 +68,27 @@ function Library:Register_Font(Name, Weight, Style, Asset)
             },
         },
     }
-    writefile(Name .. ".font", _http:JSONEncode(Data))
-    return getcustomasset(Name .. ".font")
+    pcall(function() writefile(Name .. ".font", _http:JSONEncode(Data)) end)
+    return pcall(function() return getcustomasset(Name .. ".font") end) or Font.new("rbxasset://fonts/families/SourceSansPro.json")
 end
 
 -- Helper functions
 function Library:Create(Class, Properties, Secure)
     local _Instance
-    if Secure then
+    if Secure and cloneref then
         _Instance = cloneref(Instance.new(Class))
     else 
         _Instance = type(Class) == 'string' and Instance.new(Class) or Class 
     end
     for Property, Value in next, Properties do
-        _Instance[Property] = Value
+        pcall(function() _Instance[Property] = Value end)
     end
     table.insert(self.Instances, _Instance)
     return _Instance
 end
 
 function Library:validate(defaults, options)
+    options = options or {}
     for i,v in pairs(defaults) do
         if options[i] == nil then
             options[i] = v
@@ -74,67 +98,50 @@ function Library:validate(defaults, options)
 end
 
 function Library:connection(signal, callback, tbl)
-    local connection = signal:Connect(callback)
-    table.insert(self.Connections, connection)
-    if tbl then table.insert(tbl, connection) end
+    local connection
+    pcall(function()
+        connection = signal:Connect(callback)
+        table.insert(self.Connections, connection)
+        if tbl then table.insert(tbl, connection) end
+    end)
     return connection
 end
 
 function Library:unload()
     for _,v in next, self.Instances do 
         if v and v.Parent then 
-            v:Destroy() 
+            pcall(function() v:Destroy() end)
         end 
     end
     for _,v in next, self.Connections do 
         if v then 
-            v:Disconnect() 
+            pcall(function() v:Disconnect() end)
         end 
     end
     for _,v in next, self.HeartbeatConnections do 
         if v then 
-            v:Disconnect() 
+            pcall(function() v:Disconnect() end)
         end 
     end
 end
 
 function Library:tween(object, goal, callback)
-    local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
-    if callback then
-        tween.Completed:Connect(callback)
-    end
-    tween:Play()
+    pcall(function()
+        local tween = _tweenservice:Create(object, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), goal)
+        if callback then
+            tween.Completed:Connect(callback)
+        end
+        tween:Play()
+    end)
 end
 
--- Hàm lerp không được sử dụng, có thể loại bỏ nếu muốn
-function lerp(startValue, endValue, duration, callback)
-    local startTime = tick()
-    local completed = false
-    task.spawn(function()
-        while true do
-            local currentTime = tick() - startTime
-            if currentTime >= duration then
-                callback(endValue)
-                completed = true
-                break
-            end
-            local progress = currentTime / duration
-            local lerped = startValue + (endValue - startValue) * (1 - (1 - progress) * (1 - progress))
-            callback(lerped)
-            task.wait()
-        end
-    end)
-    while not completed do
-        task.wait()
-    end
-end
 -- Hàm cập nhật tự động cho các danh sách động - Sử dụng Heartbeat với kiểm tra thay đổi
 function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
     updateInterval = updateInterval or 1 -- Mặc định cập nhật mỗi giây
     
     -- Nếu đã có kết nối cho listId này, hủy nó trước
     if Library.HeartbeatConnections[listId] then
-        Library.HeartbeatConnections[listId]:Disconnect()
+        pcall(function() Library.HeartbeatConnections[listId]:Disconnect() end)
         Library.HeartbeatConnections[listId] = nil
     end
     
@@ -142,22 +149,24 @@ function Library:RegisterDynamicList(listId, updateFunction, updateInterval)
     local lastData = {} -- Lưu trữ dữ liệu lần cập nhật trước đó
     
     -- Tạo kết nối Heartbeat mới
-    Library.HeartbeatConnections[listId] = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
-        lastUpdate = lastUpdate + deltaTime
-        if lastUpdate >= updateInterval then
-            local success, result = pcall(updateFunction)
-            if success and result then
-                -- Chỉ cập nhật nếu dữ liệu thực sự thay đổi
-                if not Library.CompareTables(result, lastData) then
-                    lastData = table.clone(result)
-                    -- Cập nhật danh sách nếu có kết quả
-                    if Library.DynamicLists[listId] then
-                        Library.DynamicLists[listId].UpdateList(result)
+    pcall(function()
+        Library.HeartbeatConnections[listId] = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
+            lastUpdate = lastUpdate + deltaTime
+            if lastUpdate >= updateInterval then
+                local success, result = pcall(updateFunction)
+                if success and result then
+                    -- Chỉ cập nhật nếu dữ liệu thực sự thay đổi
+                    if not Library.CompareTables(result, lastData) then
+                        lastData = Library:CloneTable(result)
+                        -- Cập nhật danh sách nếu có kết quả
+                        if Library.DynamicLists[listId] then
+                            Library.DynamicLists[listId].UpdateList(result)
+                        end
                     end
                 end
+                lastUpdate = 0
             end
-            lastUpdate = 0
-        end
+        end)
     end)
     
     -- Lưu trữ thông tin danh sách
@@ -169,6 +178,7 @@ end
 
 -- Hàm so sánh hai bảng để kiểm tra thay đổi
 function Library.CompareTables(table1, table2)
+    if not table1 or not table2 then return false end
     if #table1 ~= #table2 then
         return false
     end
@@ -192,7 +202,7 @@ end
 -- Hàm để hủy đăng ký danh sách động
 function Library:UnregisterDynamicList(listId)
     if Library.HeartbeatConnections[listId] then
-        Library.HeartbeatConnections[listId]:Disconnect()
+        pcall(function() Library.HeartbeatConnections[listId]:Disconnect() end)
         Library.HeartbeatConnections[listId] = nil
     end
     Library.DynamicLists[listId] = nil
@@ -201,8 +211,9 @@ end
 local SCREENGUI
 local MarketplaceService = game:GetService("MarketplaceService")
 local SoundService = game:GetService("SoundService")
-local productInfo = MarketplaceService:GetProductInfo(game.PlaceId)
-local gameName = productInfo.Name
+local productInfo
+pcall(function() productInfo = MarketplaceService:GetProductInfo(game.PlaceId) end)
+local gameName = productInfo and productInfo.Name or "Unknown Game"
 local dropdownindex = 50
 
 ab.AddWindow = function (options)
@@ -254,7 +265,7 @@ ab.AddWindow = function (options)
         BorderSizePixel = 0,
         AutomaticSize = Enum.AutomaticSize.XY,
         Position = UDim2.new(0, 0, 0, 0),
-        FontFace = Library.Font,
+        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
         TextSize = options.WaterMark.TextSize,
         TextTransparency = options.WaterMark.TextTransparency,
         TextStrokeTransparency = options.WaterMark.TextStrokeTransparency,
@@ -382,7 +393,7 @@ ab.AddWindow = function (options)
         TextSize = 9,
         RichText = true,
         Text = options.name,
-        FontFace = Library.Font,
+        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
         TextXAlignment = Enum.TextXAlignment.Left,
         Name = "Title"
     })
@@ -397,7 +408,7 @@ ab.AddWindow = function (options)
         TextSize = 9,
         RichText = true,
         Text = string.lower(os.date("%A, %d %B, %y")),
-        FontFace = Library.Font,
+        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
         TextXAlignment = Enum.TextXAlignment.Right,
         Name = "Title"
     })
@@ -596,7 +607,7 @@ ab.AddWindow = function (options)
             Position = UDim2.new(0,12,0.5,0),
             AnchorPoint = Vector2.new(0,0.5),
             TextColor3 = Library.Colors.TabInactive,
-            FontFace = Library.Font,
+            FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
             TextSize = 9,
             TextXAlignment = Enum.TextXAlignment.Left,
             Text = options.name,
@@ -857,7 +868,7 @@ ab.AddWindow = function (options)
                 Parent = SUBTAB,
                 BackgroundTransparency = 1,
                 TextColor3 = Library.Colors.TabInactive,
-                FontFace = Library.Font,
+                FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                 TextSize = 9,
                 Size = UDim2.new(1,0,1,0),
                 Text = options.name,
@@ -1113,7 +1124,7 @@ ab.AddWindow = function (options)
                 BorderSizePixel = 0,
                 TextColor3 = Library.Colors.SectionText,
                 TextSize = 9,
-                FontFace = Library.Font,
+                FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                 Text = options.name,
                 Name = "SectionText",
                 Size = UDim2.new(0, 100, 0, 10)
@@ -1187,10 +1198,8 @@ ab.AddWindow = function (options)
                 else
                     if options.side == "Right" then
                         SECTIONCONTAINER.Parent = RIGHTCONTAINER
-                        -- table.insert(RightHeight, SECTIONCONTAINER.AbsoluteSize.Y) -- Gây ra lỗi với "RightHeight" không tồn tại ở đây
                     else
                         SECTIONCONTAINER.Parent = LEFTCONTAINER
-                        -- table.insert(LeftHeight, SECTIONCONTAINER.AbsoluteSize.Y)
                     end
                 end
             end
@@ -1239,7 +1248,7 @@ ab.AddWindow = function (options)
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
                     Text = options.name,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     TextXAlignment = Enum.TextXAlignment.Center,
                     Name = "ButtonTitle"
                 })
@@ -1335,7 +1344,7 @@ ab.AddWindow = function (options)
                     BackgroundTransparency = 1.0,
                     Selectable = false,
                     Size = UDim2.new(1, 0, 1, 0),
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     Text = options.default or "",
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
@@ -1426,7 +1435,7 @@ ab.AddWindow = function (options)
                     BackgroundTransparency = 1,
                     TextSize = 9,
                     Text = options.name,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Name = "ToggleTitle",
                 })
@@ -1534,7 +1543,7 @@ ab.AddWindow = function (options)
                         BackgroundTransparency = 1,
                         TextColor3 = Color3.fromRGB(255, 255, 255),
                         TextSize = 10,
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         Text = keybind.Key == Enum.KeyCode.Unknown and "" or keybind.Key.Name or "nil",
                         Name = "KeybindTextBox"
                     })
@@ -1547,7 +1556,7 @@ ab.AddWindow = function (options)
                         TextColor3 = Library.Colors.ElementInactive,
                         TextSize = 8,
                         Text = "Keybind",
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         TextXAlignment = Enum.TextXAlignment.Center,
                         Name = "KeybindLabel"
                     })
@@ -1703,7 +1712,7 @@ ab.AddWindow = function (options)
                         TextColor3 = Color3.fromRGB(255,255,255),
                         TextSize = 9,
                         Text = "copy",
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         TextXAlignment = Enum.TextXAlignment.Center,
                         BorderSizePixel = 0
                     })
@@ -1723,7 +1732,7 @@ ab.AddWindow = function (options)
                         Size = UDim2.new(1, 0, 1, 0),
                         BorderSizePixel = 0,
                         Selectable = false,
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         TextColor3 = Color3.fromRGB(255,255,255),
                         TextSize = 9,
                         TextStrokeTransparency = 0,
@@ -2022,7 +2031,7 @@ ab.AddWindow = function (options)
                         Library:tween(COPYTEXT, {TextColor3 = Library.Colors.Accent})
                         local input = Library:connection(_uis.InputBegan, function(input)
                             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                setclipboard(absvalue)
+                                pcall(function() setclipboard(absvalue) end)
                             end
                         end)
                         local leave
@@ -2119,7 +2128,7 @@ ab.AddWindow = function (options)
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
                     Text = options.name,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Name = "SliderTitle"
                 })
@@ -2173,7 +2182,7 @@ ab.AddWindow = function (options)
                     Position = UDim2.new(1, -10, 0, -15),
                     BackgroundTransparency = 1,
                     TextColor3 = Library.Colors.ElementInactive,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     Text = math.round(options.value),
                     TextTransparency = 1,
                     TextSize = 8,
@@ -2195,7 +2204,7 @@ ab.AddWindow = function (options)
                     BorderSizePixel = 0,
                     TextColor3 = Color3.fromRGB(255, 255, 255),
                     TextSize = 10,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     Text = tostring(options.default),
                     Name = "SliderTextBox"
                 })
@@ -2418,7 +2427,7 @@ ab.AddWindow = function (options)
                     Position = UDim2.new(0, 2, 0, -1),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     Text = options.name,
                     TextColor3 = Library.Colors.ElementActive,
                     TextSize = 9,
@@ -2454,7 +2463,7 @@ ab.AddWindow = function (options)
                     AnchorPoint = Vector2.new(0.5, 0),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Center,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     Text = defaultValue or "",
                     TextColor3 = Library.Colors.ElementInactive,
                     TextSize = 9,
@@ -2562,7 +2571,7 @@ ab.AddWindow = function (options)
                         Size = UDim2.new(1,0,1,0),
                         Parent = CHOICE,
                         BackgroundTransparency = 1,
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         Text = name,
                         TextColor3 = Library.Colors.ElementInactive,
                         TextSize = 8,
@@ -2741,7 +2750,7 @@ ab.AddWindow = function (options)
                 return dropdown
             end
             
-                       -- List element (ĐÃ SỬA LỖI VÀ LÀM SẠCH)
+            -- List element (ĐÃ SỬA LỖI VÀ LÀM SẠCH)
             function section:AddList(options)
                 options = Library:validate({
                     default = 1,
@@ -2816,8 +2825,6 @@ ab.AddWindow = function (options)
                     SortOrder = Enum.SortOrder.LayoutOrder,
                     Name = "ListLayout"
                 })
-
-                -- (ĐÃ XÓA) UI Gradient thừa đã được loại bỏ khỏi đây để làm sạch giao diện
                 
                 Library:connection(CHOICEHOLDER.MouseEnter, function()
                     List.MouseInside = true
@@ -2917,7 +2924,7 @@ ab.AddWindow = function (options)
                         AnchorPoint = Vector2.new(0.5,0),
                         Position = UDim2.new(0.5, 0, 0, 0),
                         BackgroundTransparency = 1,
-                        FontFace = Library.Font,
+                        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                         Text = name,
                         TextColor3 = Library.Colors.ElementInactive,
                         TextSize = 8,
@@ -3049,7 +3056,7 @@ ab.AddWindow = function (options)
                     -- Lưu lại các lựa chọn đã chọn
                     local selectedItems = {}
                     if options.multi then
-                        selectedItems = table.clone(List.CurrentChoice)
+                        selectedItems = Library:CloneTable(List.CurrentChoice)
                     else
                         selectedItems = {List.CurrentChoice}
                     end
