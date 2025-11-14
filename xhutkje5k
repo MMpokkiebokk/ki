@@ -1294,33 +1294,76 @@ ab.AddWindow = function (options)
                     color = nil
                 }, options or {})
                 
-                local LABEL = Library:Create("TextLabel", {
+                -- Tạo một container riêng cho label để quản lý vị trí tốt hơn
+                local LABELCONTAINER = Library:Create("Frame", {
                     Parent = ELEMENTCONTAINER,
                     Size = UDim2.new(1, 0, 0, 15),
+                    BackgroundTransparency = 1,
+                    Name = options.name .. "_Container",
+                    LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
+                })
+                
+                local LABEL = Library:Create("TextLabel", {
+                    Parent = LABELCONTAINER,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
                     BackgroundTransparency = 1,
                     Text = options.text,
                     TextColor3 = options.color or Library.Colors.ElementActive,
                     TextSize = 9,
-                    FontFace = Library.Font,
+                    FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    TextYAlignment = Enum.TextYAlignment.Top,
+                    TextYAlignment = Enum.TextYAlignment.Center,
                     TextWrapped = true,
                     Name = options.name
                 })
                 
                 -- Mobile optimization for labels
                 if Library.MobileMode then
-                    LABEL.Size = UDim2.new(1, 0, 0, 20)
+                    LABELCONTAINER.Size = UDim2.new(1, 0, 0, 20)
                     LABEL.TextSize = 12
                 end
                 
+                -- Cập nhật CanvasSize của ELEMENTCONTAINER
+                local function updateCanvasSize()
+                    local UIListLayout = ELEMENTCONTAINER:FindFirstChild("ElementLayout")
+                    if UIListLayout then
+                        local padding = ELEMENTCONTAINER:FindFirstChild("UIPadding")
+                        local topPadding = padding and padding.PaddingTop.Offset or 0
+                        local bottomPadding = padding and padding.PaddingBottom.Offset or 0
+                        local leftPadding = padding and padding.PaddingLeft.Offset or 0
+                        local rightPadding = padding and padding.PaddingRight.Offset or 0
+                        
+                        ELEMENTCONTAINER.CanvasSize = UDim2.new(
+                            0, UIListLayout.AbsoluteContentSize.X + leftPadding + rightPadding,
+                            0, UIListLayout.AbsoluteContentSize.Y + topPadding + bottomPadding
+                        )
+                    end
+                end
+                
+                -- Cập nhật CanvasSize ngay khi thêm label
+                updateCanvasSize()
+                
+                -- Theo dõi khi text thay đổi để cập nhật kích thước nếu cần
+                Library:connection(LABEL:GetPropertyChangedSignal("Text"), function()
+                    updateCanvasSize()
+                end)
+                
                 -- Methods
                 function LABEL:SetText(text)
-                    LABEL.Text = text
+                    pcall(function() LABEL.Text = text end)
+                    updateCanvasSize()
                 end
                 
                 function LABEL:SetColor(color)
-                    LABEL.TextColor3 = color
+                    pcall(function() LABEL.TextColor3 = color end)
+                end
+                
+                function LABEL:SetSize(height)
+                    pcall(function() 
+                        LABELCONTAINER.Size = UDim2.new(1, 0, 0, height)
+                        updateCanvasSize()
+                    end)
                 end
                 
                 return LABEL
