@@ -1287,7 +1287,44 @@ ab.AddWindow = function (options)
                 
                 return
             end
-            
+            function section:AddLabel(options)
+                options = Library:validate({
+                    name = "label",
+                    text = "This is a label",
+                    color = nil
+                }, options or {})
+                
+                local LABEL = Library:Create("TextLabel", {
+                    Parent = ELEMENTCONTAINER,
+                    Size = UDim2.new(1, 0, 0, 15),
+                    BackgroundTransparency = 1,
+                    Text = options.text,
+                    TextColor3 = options.color or Library.Colors.ElementActive,
+                    TextSize = 9,
+                    FontFace = Library.Font,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Top,
+                    TextWrapped = true,
+                    Name = options.name
+                })
+                
+                -- Mobile optimization for labels
+                if Library.MobileMode then
+                    LABEL.Size = UDim2.new(1, 0, 0, 20)
+                    LABEL.TextSize = 12
+                end
+                
+                -- Methods
+                function LABEL:SetText(text)
+                    LABEL.Text = text
+                end
+                
+                function LABEL:SetColor(color)
+                    LABEL.TextColor3 = color
+                end
+                
+                return LABEL
+            end
             -- Textbox element
             function section:AddTextbox(options)
                 options = Library:validate({
