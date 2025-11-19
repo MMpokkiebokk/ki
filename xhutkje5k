@@ -3213,7 +3213,308 @@ ab.AddWindow = function (options)
                 
                 return List
             end
+            -- Add this complete function to your section object (inside the "return section" part)
+function section:AddColorpicker(options)
+    options = Library:validate({
+        name = "color picker",
+        default = Color3.fromRGB(255,255,255),
+        callback = function(color) end,
+    }, options or {})
+    
+    local colorpicker = {
+        Color = options.default,
+        Visible = false,
+        lastHue = 0,
+        lastSaturation = 0
+    }
+    
+    local COLORPICKERCONTAINER = Library:Create("Frame", {
+        Parent = ELEMENTCONTAINER,
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        LayoutOrder = #ELEMENTCONTAINER:GetChildren() + 1
+    })
+    
+    local COLORPICKERTITLE = Library:Create("TextLabel", {
+        Parent = COLORPICKERCONTAINER,
+        Size = UDim2.new(1, -30, 0, 10),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        TextColor3 = Library.Colors.ElementInactive,
+        TextSize = 9,
+        Text = options.name,
+        FontFace = Library.Font or Font.new("rbxasset://fonts/families/SourceSansPro.json"),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Name = "ColorPickerTitle"
+    })
+    
+    local COLORBUTTON = Library:Create("Frame", {
+        Parent = COLORPICKERCONTAINER,
+        Size = UDim2.new(0, 20, 0, 10),
+        Position = UDim2.new(1, -25, 0, 0),
+        BackgroundColor3 = options.default,
+        BorderColor3 = Library.Colors.BorderColor,
+        BorderSizePixel = 1,
+        Name = "ColorButton"
+    })
+    
+    Library:Create("UICorner", {
+        Parent = COLORBUTTON,
+        CornerRadius = UDim.new(0, 2)
+    })
+    
+    -- Color picker popup
+    local COLORPICKER = Library:Create("Frame", {
+        Name = "colorpicker",
+        Parent = SCREENGUI,
+        Size = UDim2.new(0, 200, 0, 200),
+        Visible = false,
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BorderSizePixel = 2,
+        BackgroundColor3 = Library.Colors.Window,
+        ZIndex = 100
+    })
+    
+    local BRIGHTNESS = Library:Create("Frame", {
+        Name = "brightness",
+        Parent = COLORPICKER,
+        Size = UDim2.new(1, -20, 1, -20),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        BorderSizePixel = 2,
+        Position = UDim2.new(0, 10, 0, 10)
+    })
+    
+    local IMAGELABEL = Library:Create("ImageLabel", {
+        Name = "ImageLabel",
+        Parent = BRIGHTNESS,
+        Size = UDim2.new(1, 0, 1, 0),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://2615689005"
+    })
+    
+    local PICKER_BRIGHTNESS = Library:Create("ImageLabel", {
+        Name = "picker",
+        Parent = BRIGHTNESS,
+        Size = UDim2.new(0, 10, 0, 10),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 2,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://18268646065",
+        AnchorPoint = Vector2.new(0.5, 0.5)
+    })
+
+    local HUE = Library:Create("ImageLabel", {
+        Name = "hue",
+        Parent = COLORPICKER,
+        AnchorPoint = Vector2.new(1, 0),
+        Size = UDim2.new(0, 15, 1, -20),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        Position = UDim2.new(1, 0, 0, 10),
+        BorderSizePixel = 2,
+        Image = "rbxassetid://2615692420",
+    })
+    
+    local PICKER_HUE = Library:Create("Frame", {
+        Name = "picker",
+        Parent = HUE,
+        Size = UDim2.new(1, 0, 0, 1),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    })
+    
+    local PREVIEW = Library:Create("Frame", {
+        Name = "preview",
+        Parent = COLORPICKER,
+        AnchorPoint = Vector2.new(1, 1),
+        Size = UDim2.new(0, 15, 0, 15),
+        BorderColor3 = Color3.fromRGB(0, 0, 0),
+        Position = UDim2.new(1, -10, 1, -10),
+        BorderSizePixel = 2,
+        BackgroundColor3 = options.default
+    })
+    
+    Library:Create("UIGradient", {
+        Name = "UIGradient",
+        Parent = PREVIEW,
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(230, 230, 230)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+        }),
+        Rotation = 45
+    })
+    
+    -- Update color function
+    local function updateValue(value)
+        colorpicker.Color = value
+        COLORBUTTON.BackgroundColor3 = value
+        PREVIEW.BackgroundColor3 = value
+        options.callback(value)
+        
+        -- Store hue and saturation when value > 0
+        local h, s, v = Color3.toHSV(value)
+        if v > 0 then
+            colorpicker.lastHue = h
+            colorpicker.lastSaturation = s
+        end
+        
+        -- Update hue slider position
+        local huePercent = h
+        PICKER_HUE.Position = UDim2.new(0, 0, 0, huePercent * HUE.AbsoluteSize.Y)
+    end
+    
+    -- Color picker functionality
+    Library:connection(COLORBUTTON.MouseEnter, function()
+        Library:tween(COLORBUTTON, {BorderColor3 = Library.Colors.Accent})
+    end)
+    
+    Library:connection(COLORBUTTON.MouseLeave, function()
+        Library:tween(COLORBUTTON, {BorderColor3 = Library.Colors.BorderColor})
+    end)
+    
+    Library:connection(COLORBUTTON.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            -- Close other color pickers
+            for i, v in pairs(SCREENGUI:GetDescendants()) do
+                if v.Name == "colorpicker" and v.Visible and v ~= COLORPICKER then 
+                    v.Visible = false
+                end
+            end
             
+            -- Position the color picker near the button
+            local buttonPos = COLORBUTTON.AbsolutePosition
+            local buttonSize = COLORBUTTON.AbsoluteSize
+            
+            COLORPICKER.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+            COLORPICKER.Visible = not COLORPICKER.Visible
+            colorpicker.Visible = COLORPICKER.Visible
+            
+            if COLORPICKER.Visible then
+                -- Initialize the color picker with current color
+                updateValue(colorpicker.Color)
+            end
+        end
+    end)
+    
+    -- Brightness picker functionality
+    Library:connection(BRIGHTNESS.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local function updatePickerPosition(x, y)
+                local offsetX = x - BRIGHTNESS.AbsolutePosition.X
+                local offsetY = y - BRIGHTNESS.AbsolutePosition.Y
+                
+                offsetX = math.clamp(offsetX, 0, BRIGHTNESS.AbsoluteSize.X)
+                offsetY = math.clamp(offsetY, 0, BRIGHTNESS.AbsoluteSize.Y)
+                
+                PICKER_BRIGHTNESS.Position = UDim2.new(0, offsetX, 0, offsetY)
+                
+                local saturation = offsetX / BRIGHTNESS.AbsoluteSize.X
+                local value = 1 - (offsetY / BRIGHTNESS.AbsoluteSize.Y)
+                
+                local hueColor = BRIGHTNESS.BackgroundColor3
+                local h, s, v = Color3.toHSV(hueColor)
+                local color = Color3.fromHSV(h, saturation, value)
+                
+                updateValue(color)
+            end
+            
+            -- Update immediately on mouse press
+            updatePickerPosition(input.Position.X, input.Position.Y)
+            
+            -- Track mouse movement
+            local draggingConnection = _uis.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    updatePickerPosition(input.Position.X, input.Position.Y)
+                end
+            end)
+            
+            -- Disconnect when mouse is released
+            local endConnection
+            endConnection = _uis.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    draggingConnection:Disconnect()
+                    endConnection:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    -- Hue picker functionality
+    Library:connection(HUE.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local function updateHuePosition(y)
+                local offsetY = y - HUE.AbsolutePosition.Y
+                offsetY = math.clamp(offsetY, 0, HUE.AbsoluteSize.Y)
+                local percent = offsetY / HUE.AbsoluteSize.Y
+                local hue = percent * 360
+                local color = Color3.fromHSV(hue / 360, colorpicker.lastSaturation or 1, 1)
+                BRIGHTNESS.BackgroundColor3 = color
+                PICKER_HUE.Position = UDim2.new(0, 0, 0, offsetY)
+                
+                local saturation = PICKER_BRIGHTNESS.Position.X.Offset / BRIGHTNESS.AbsoluteSize.X
+                local value = 1 - (PICKER_BRIGHTNESS.Position.Y.Offset / BRIGHTNESS.AbsoluteSize.Y)
+                local finalColor = Color3.fromHSV(hue / 360, saturation, value)
+                updateValue(finalColor)
+            end
+            
+            updateHuePosition(input.Position.Y)
+            
+            local draggingConnection = Library:connection(_uis.InputChanged, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    updateHuePosition(input.Position.Y)
+                end
+            end)
+            
+            local endConnection
+            endConnection = Library:connection(_uis.InputEnded, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    draggingConnection:Disconnect()
+                    endConnection:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    -- Click outside to close
+    Library:connection(_uis.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and COLORPICKER.Visible then
+            local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+            local pickerPos = COLORPICKER.AbsolutePosition
+            local pickerSize = COLORPICKER.AbsoluteSize
+            
+            if mousePos.X < pickerPos.X or mousePos.X > pickerPos.X + pickerSize.X or
+               mousePos.Y < pickerPos.Y or mousePos.Y > pickerPos.Y + pickerSize.Y then
+                COLORPICKER.Visible = false
+                colorpicker.Visible = false
+            end
+        end
+    end)
+    
+    -- Methods for the color picker
+    function colorpicker:SetColor(color)
+        updateValue(color)
+    end
+    
+    function colorpicker:GetColor()
+        return colorpicker.Color
+    end
+    
+    function colorpicker:SetVisible(visible)
+        COLORPICKER.Visible = visible
+        colorpicker.Visible = visible
+    end
+    
+    -- Initialize with default value
+    updateValue(options.default)
+    
+    return colorpicker
+end
             return section
         end
         
